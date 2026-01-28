@@ -19,19 +19,29 @@ enum Role {
 }
 
 model User {
-  id           Int        @id @default(autoincrement())
-  name         String
-  email        String     @unique
-  password     String
-  phoneNumber  String
-  role         Role       @default(CUSTOMER)
-  isActive     Boolean    @default(true)
-
-  wishlist     Wishlist[]
-  cart         Cart?
-  orders       Order[]
-
-  createdAt    DateTime   @default(now())
+  id             Int      @id @default(autoincrement())
+  email          String   @unique
+  name           String?
+  password       String?
+  googleId       String?  @unique
+  phone          String?
+  bio            String?
+  country        String?
+  city           String?
+  postalCode     String?
+  taxId          String?
+  avatar         String?  
+  role           String   @default("CUSTOMER")
+  loyaltyPoints  Int      @default(0)
+  otp            String?
+  otpExpires     DateTime?
+  isActive       Boolean  @default(false)
+  refreshToken   String?
+  wishlist       Wishlist[]
+  cart           Cart?
+  orders         Order[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model Category {
