@@ -141,8 +141,19 @@ export const api = createApi({
       }
     }),
     reducerPath: "api",
-    tagTypes: ["Products"],
+    tagTypes: ["Products", "Categories"],
     endpoints: (build) => ({
+        // GET all categories
+        getCategories: build.query<Category[], void>({
+            query: () => ({
+                url: "/categories",
+                method: "GET",
+            }),
+            transformResponse: (response: ApiResponse<Category[]>) => response.data,
+            providesTags: ["Categories"],
+            keepUnusedDataFor: 300,
+        }),
+
         // GET all products
         getProducts: build.query<Product[], void>({
             query: () => ({
@@ -151,6 +162,7 @@ export const api = createApi({
             }),
             transformResponse: (response: ApiResponse<Product[]>) => response.data,
             providesTags: ["Products"],
+            keepUnusedDataFor: 300,
         }),
 
         // GET product by ID
@@ -198,6 +210,7 @@ export const api = createApi({
 });
 
 export const { 
+    useGetCategoriesQuery,
     useGetProductsQuery,
     useGetProductByIdQuery,
     useCreateProductMutation,

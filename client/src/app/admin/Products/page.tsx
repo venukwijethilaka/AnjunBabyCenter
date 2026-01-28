@@ -1,14 +1,16 @@
 "use client"
 import React, { useState, useMemo } from 'react'
 import ProductCard from './productCard'
-import { useGetProductsQuery, Product, useCreateProductMutation, useUpdateProductMutation, useDeleteProductMutation } from '@/state/api'
+import { useGetProductsQuery, Product, useCreateProductMutation, useUpdateProductMutation, useDeleteProductMutation, useGetCategoriesQuery } from '@/state/api'
 import { Plus, Search, X } from 'lucide-react'
 import CreateProductModal from './CreateProductModal'
 import EditProductModal from './EditProductModal'
 import DeleteProductModal from './DeleteProductModal'
+import { getAllSubcategories } from './categoryUtils'
 
 const page = () => {
     const { data: products, isLoading, error } = useGetProductsQuery();
+    const { data: categories = [] } = useGetCategoriesQuery();
     const [createProduct] = useCreateProductMutation();
     const [updateProduct] = useUpdateProductMutation();
     const [deleteProduct] = useDeleteProductMutation();
@@ -20,12 +22,10 @@ const page = () => {
     const [searchTerm, setSearchTerm] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
 
-    // Mock categories - replace with actual API call
-    const categories = [
-      { id: 1, name: 'Category 1' },
-      { id: 2, name: 'Category 2' },
-      // Add more categories or fetch from API
-    ]
+    // Get only subcategories (children categories)
+    const subcategories = useMemo(() => {
+      return getAllSubcategories(categories)
+    }, [categories])
 
     // Filter products based on search term
     const filteredProducts = useMemo(() => {
@@ -175,7 +175,7 @@ const page = () => {
           <div className="flex gap-4 items-center">
             <button 
               onClick={handleOpenCreateModal}
-              className='cursor-pointer flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium'
+              className='cursor-pointer flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl shadow-md hover:bg-green-700 font-medium'
             >
               <Plus size={20} />
               Create New Product
@@ -237,7 +237,7 @@ const page = () => {
           isOpen={createModalOpen}
           onClose={handleCloseCreateModal}
           onSubmit={handleCreateProduct}
-          categories={categories}
+          categories={subcategories}
           isLoading={isSubmitting}
         />
 
@@ -246,7 +246,7 @@ const page = () => {
           onClose={handleCloseEditModal}
           onSubmit={handleEditProduct}
           product={selectedProduct}
-          categories={categories}
+          categories={subcategories}
           isLoading={isSubmitting}
         />
 

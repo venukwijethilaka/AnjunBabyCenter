@@ -11,7 +11,7 @@ type cardItems = {
 const productCard = ({ product, onEdit, onDelete }: cardItems) => {
   return (
     <div>
-        <div className="border rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow">
+        <div className="rounded-lg p-4 shadow-md bg-white hover:shadow-lg transition-shadow">
         <img src={product.imageUrl} alt={product.name} className="w-full h-48 object-cover rounded" />
         <h3 className="font-bold mt-2">{product.name}</h3>
         <p className="text-gray-600">${product.price}</p>
@@ -20,14 +20,14 @@ const productCard = ({ product, onEdit, onDelete }: cardItems) => {
         <div className="flex gap-2 mt-4">
           <button
             onClick={() => onEdit(product)}
-            className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+            className="flex-1 flex items-center justify-center gap-2 opacity-60 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
           >
             <Edit size={16} />
             Edit
           </button>
           <button
             onClick={() => onDelete(product)}
-            className="flex-1 flex items-center justify-center gap-2 bg-red-600 text-white py-2 rounded hover:bg-red-700 transition"
+            className="flex-1 flex items-center justify-center gap-2 opacity-60 bg-red-600 text-white py-2 rounded hover:bg-red-700 transition"
           >
             <Trash2 size={16} />
             Delete

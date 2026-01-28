@@ -1,23 +1,30 @@
 "use client"
-import React, { useState } from 'react'
-import { X, Upload } from 'lucide-react'
+import React, { useState, useRef } from 'react'
+import { X, Upload, Loader2 } from 'lucide-react'
+import { Category } from '@/state/api'
+import { IKContext, IKUpload } from "imagekitio-react"
 
 interface CreateProductModalProps {
   isOpen: boolean
   onClose: () => void
   onSubmit: (data: any) => void
-  categories?: Array<{ id: number; name: string }>
+  categories?: Category[]
   isLoading?: boolean
 }
 
-const CreateProductModal = ({ isOpen, onClose, onSubmit, categories = [], isLoading = false }: CreateProductModalProps) => {
+const CreateProductModal = ({ 
+  isOpen, 
+  onClose, 
+  onSubmit, 
+  categories = [], 
+  isLoading = false 
+}: CreateProductModalProps) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: '',
     quantity: '',
     imageUrl: '',
-    imageFile: null as File | null,
     color: '',
     size: '',
     categoryId: '',
@@ -28,164 +35,131 @@ const CreateProductModal = ({ isOpen, onClose, onSubmit, categories = [], isLoad
     discountPercentage: ''
   })
 
-  const [imagePreview, setImagePreview] = useState<string>('')
+  const [isUploading, setIsUploading] = useState(false)
+  
+  // Using a standard ref to trigger the hidden file input
+  const ikUploadRef = useRef<HTMLInputElement>(null)
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target
-    
-    if (type === 'checkbox') {
-      const checked = (e.target as HTMLInputElement).checked
-      setFormData(prev => ({
-        ...prev,
-        [name]: checked
-      }))
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }))
+  const authenticator = async () => {
+    try {
+      console.log("Fetching auth from:", `${process.env.NEXT_PUBLIC_API_BASE_URL}/imagekit-auth`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/imagekit-auth`)
+      if (!response.ok) throw new Error("Authentication failed")
+      return await response.json()
+    } catch (error) {
+      throw new Error(`Authentication request failed: ${error}`)
     }
   }
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setFormData(prev => ({
-        ...prev,
-        imageFile: file,
-        imageUrl: file.name
-      }))
-      
-      // Create preview
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked
+      setFormData(prev => ({ ...prev, [name]: checked }))
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }))
     }
+  }
+
+  const onUploadStart = () => setIsUploading(true)
+  
+  const onUploadSuccess = (res: any) => {
+    setIsUploading(false)
+    setFormData(prev => ({ ...prev, imageUrl: res.url }))
+  }
+
+  const onUploadError = (err: any) => {
+    setIsUploading(false)
+    console.error("Upload Error:", err)
+    alert("Failed to upload image")
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validation
-    if (!formData.name.trim()) {
-      alert('Product name is required')
+    if (!formData.imageUrl) {
+      alert('Please upload an image first')
       return
     }
-    if (!formData.description.trim()) {
-      alert('Description is required')
-      return
-    }
-    if (!formData.price || parseFloat(formData.price) <= 0) {
-      alert('Price must be greater than 0')
-      return
-    }
-    if (!formData.quantity || parseInt(formData.quantity) < 0) {
-      alert('Quantity must be a positive number')
-      return
-    }
-    if (!formData.imageFile) {
-      alert('Image is required')
-      return
-    }
-    if (!formData.categoryId) {
-      alert('Category is required')
-      return
-    }
-    
+
     onSubmit({
+      ...formData,
       name: formData.name.trim(),
-      description: formData.description.trim(),
       price: parseFloat(formData.price),
       quantity: parseInt(formData.quantity),
-      imageFile: formData.imageFile,
-      imageUrl: formData.imageUrl,
-      color: formData.color.trim() || null,
-      size: formData.size.trim() || null,
       categoryId: parseInt(formData.categoryId),
-      availability: formData.availability,
-      isFeatured: formData.isFeatured,
-      isTrending: formData.isTrending,
-      isFlashSale: formData.isFlashSale,
       discountPercentage: formData.discountPercentage ? parseFloat(formData.discountPercentage) : null
     })
     
-    setFormData({
-      name: '',
-      description: '',
-      price: '',
-      quantity: '',
-      imageUrl: '',
-      imageFile: null,
-      color: '',
-      size: '',
-      categoryId: '',
-      availability: true,
-      isFeatured: false,
-      isTrending: false,
-      isFlashSale: false,
-      discountPercentage: ''
-    })
-    setImagePreview('')
+    onClose()
   }
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-transparent flex items-center justify-center z-50 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto p-4">
       <div className="bg-white rounded-lg p-8 w-full max-w-4xl shadow-2xl my-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">Create New Product</h2>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded"
-          >
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
             <X size={24} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="max-h-[80vh] overflow-y-auto">
-          <div className="grid grid-cols-3 gap-6 mb-6">
+        <form onSubmit={handleSubmit} className="max-h-[75vh] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            
             {/* Image Upload Section */}
             <div className="col-span-1">
               <label className="block text-sm font-medium mb-2">Product Image *</label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                {imagePreview ? (
-                  <div className="relative">
-                    <img 
-                      src={imagePreview} 
-                      alt="Preview" 
-                      className="w-full h-48 object-cover rounded"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setImagePreview('')
-                        setFormData(prev => ({ ...prev, imageFile: null, imageUrl: '' }))
-                      }}
-                      className="mt-2 text-sm text-red-600 hover:text-red-800"
-                    >
-                      Remove Image
-                    </button>
-                  </div>
-                ) : (
-                  <div className="py-8">
-                    <Upload className="mx-auto mb-2 text-gray-400" size={32} />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="w-full"
-                      required
-                    />
-                    <p className="text-xs text-gray-500 mt-2">JPG, PNG, GIF up to 5MB</p>
-                  </div>
-                )}
-              </div>
+              <IKContext 
+                publicKey={process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY} 
+                urlEndpoint={process.env.NEXT_PUBLIC_IMAGEKIT_URL} 
+                authenticator={authenticator}
+              >
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center min-h-50 flex flex-col items-center justify-center">
+                  {formData.imageUrl ? (
+                    <div className="relative w-full">
+                      <img 
+                        src={formData.imageUrl} 
+                        alt="Preview" 
+                        className="w-full h-48 object-cover rounded"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setFormData(p => ({ ...p, imageUrl: '' }))}
+                        className="mt-2 text-sm text-red-600 font-semibold"
+                      >
+                        Remove & Replace
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="py-4 w-full">
+                      {isUploading ? (
+                        <div className="flex flex-col items-center">
+                          <Loader2 className="animate-spin text-blue-500 mb-2" size={32} />
+                          <p className="text-sm text-gray-500">Uploading...</p>
+                        </div>
+                      ) : (
+                        <>
+                          <Upload className="mx-auto mb-2 text-gray-400" size={32} />
+                          {/* Note: If inputRef still errors, you can use a normal button or style the input directly */}
+                          <IKUpload
+                            fileName="product.png"
+                            onError={onUploadError}
+                            onSuccess={onUploadSuccess}
+                            onUploadStart={onUploadStart}
+                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                          />
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </IKContext>
             </div>
 
-            {/* Form Fields */}
+            {/* Form Fields Section */}
             <div className="col-span-2">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
@@ -195,12 +169,10 @@ const CreateProductModal = ({ isOpen, onClose, onSubmit, categories = [], isLoad
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="Enter product name"
+                    className="w-full border rounded px-3 py-2 outline-none focus:border-green-500"
                     required
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium mb-1">Price *</label>
                   <input
@@ -210,11 +182,9 @@ const CreateProductModal = ({ isOpen, onClose, onSubmit, categories = [], isLoad
                     onChange={handleChange}
                     className="w-full border rounded px-3 py-2"
                     step="0.01"
-                    placeholder="0.00"
                     required
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium mb-1">Quantity *</label>
                   <input
@@ -223,35 +193,9 @@ const CreateProductModal = ({ isOpen, onClose, onSubmit, categories = [], isLoad
                     value={formData.quantity}
                     onChange={handleChange}
                     className="w-full border rounded px-3 py-2"
-                    placeholder="0"
                     required
                   />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">Color</label>
-                  <input
-                    type="text"
-                    name="color"
-                    value={formData.color}
-                    onChange={handleChange}
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="e.g., Red, Blue"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">Size</label>
-                  <input
-                    type="text"
-                    name="size"
-                    value={formData.size}
-                    onChange={handleChange}
-                    className="w-full border rounded px-3 py-2"
-                    placeholder="e.g., S, M, L"
-                  />
-                </div>
-
                 <div className="col-span-2">
                   <label className="block text-sm font-medium mb-1">Category *</label>
                   <select
@@ -262,31 +206,15 @@ const CreateProductModal = ({ isOpen, onClose, onSubmit, categories = [], isLoad
                     required
                   >
                     <option value="">Select a category</option>
-                    {categories.map(cat => (
+                    {categories.map((cat: Category) => (
                       <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
                   </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1">Discount %</label>
-                  <input
-                    type="number"
-                    name="discountPercentage"
-                    value={formData.discountPercentage}
-                    onChange={handleChange}
-                    className="w-full border rounded px-3 py-2"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    placeholder="0.00"
-                  />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Description */}
           <div className="mb-6">
             <label className="block text-sm font-medium mb-1">Description *</label>
             <textarea
@@ -294,69 +222,38 @@ const CreateProductModal = ({ isOpen, onClose, onSubmit, categories = [], isLoad
               value={formData.description}
               onChange={handleChange}
               className="w-full border rounded px-3 py-2"
-              rows={4}
-              placeholder="Enter product description"
+              rows={3}
               required
             />
           </div>
 
-          {/* Checkboxes */}
-          <div className="grid grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="availability"
-                checked={formData.availability}
-                onChange={handleChange}
-                className="w-4 h-4"
-              />
-              <span className="text-sm">Available</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="isFeatured"
-                checked={formData.isFeatured}
-                onChange={handleChange}
-                className="w-4 h-4"
-              />
-              <span className="text-sm">Featured</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="isTrending"
-                checked={formData.isTrending}
-                onChange={handleChange}
-                className="w-4 h-4"
-              />
-              <span className="text-sm">Trending</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                name="isFlashSale"
-                checked={formData.isFlashSale}
-                onChange={handleChange}
-                className="w-4 h-4"
-              />
-              <span className="text-sm">Flash Sale</span>
-            </label>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+            {['availability', 'isFeatured', 'isTrending', 'isFlashSale'].map((field) => (
+              <label key={field} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name={field}
+                  checked={(formData as any)[field]}
+                  onChange={handleChange}
+                  className="w-4 h-4 accent-green-600"
+                />
+                <span className="text-sm capitalize">{field.replace('is', '')}</span>
+              </label>
+            ))}
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 sticky bottom-0 bg-white pt-4">
             <button
               type="submit"
-              disabled={isLoading}
-              className="flex-1 bg-green-600 text-white rounded py-3 hover:bg-green-700 font-medium text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isLoading || isUploading}
+              className="flex-1 bg-green-600 text-white rounded py-3 hover:bg-green-700 font-bold disabled:opacity-50"
             >
               {isLoading ? 'Creating...' : 'Create Product'}
             </button>
             <button
               type="button"
               onClick={onClose}
-              disabled={isLoading}
-              className="flex-1 bg-gray-300 text-black rounded py-3 hover:bg-gray-400 font-medium text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-gray-200 text-gray-800 rounded py-3 hover:bg-gray-300 font-bold"
             >
               Cancel
             </button>

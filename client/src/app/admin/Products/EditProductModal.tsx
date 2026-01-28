@@ -1,14 +1,14 @@
 "use client"
 import React, { useState, useEffect } from 'react'
 import { X, Upload } from 'lucide-react'
-import { Product } from '@/state/api'
+import { Product, Category } from '@/state/api'
 
 interface EditProductModalProps {
   isOpen: boolean
   onClose: () => void
   onSubmit: (data: any) => void
   product?: Product
-  categories?: Array<{ id: number; name: string }>
+  categories?: Category[]
   isLoading?: boolean
 }
 
@@ -266,10 +266,18 @@ const EditProductModal = ({ isOpen, onClose, onSubmit, product, categories = [],
                     required
                   >
                     <option value="">Select a category</option>
-                    {categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
+                    {categories && categories.length > 0 ? (
+                      categories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))
+                    ) : (
+                      <option value="" disabled>No categories available</option>
+                    )}
                   </select>
+                  {/* Debug: Show category count */}
+                  <p className="text-xs text-gray-500 mt-1">
+                    Categories loaded: {categories?.length || 0}
+                  </p>
                 </div>
 
                 <div>
