@@ -1,8 +1,12 @@
 import { Router } from "express";
 import * as productController from "../controllers/product.controller.js";
+import { getAuthParams } from "../controllers/imagekit.controller.js";
+
+// ... other routes
+
 
 const router = Router();
-
+router.get("/imagekit-auth", getAuthParams);
 // Create a new product
 router.post("/", productController.createProduct);
 
