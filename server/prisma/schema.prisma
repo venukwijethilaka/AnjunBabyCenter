@@ -7,32 +7,48 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  CUSTOMER
+  ADMIN
+  SUPER_ADMIN
+}
+
+
+model LoyaltyLevel {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique // e.g., "Silver"
+  minPoints    Int
+  color        String
+  badgeColor   String
+  updatedAt    DateTime @updatedAt
+}
+
 model User {
-  id            Int        @id @default(autoincrement())
-  name          String?
-  email         String     @unique
-  password      String?
-  isActive      Boolean    @default(false)
-  createdAt     DateTime   @default(now())
-  googleId      String?    @unique
-  loyaltyPoints Int        @default(0)
-  otp           String?
-  otpExpires    DateTime?
-  refreshToken  String?
-  updatedAt     DateTime
-  avatar        String?
-  bio           String?
-  city          String?
-  country       String?
-  phone         String?
-  postalCode    String?
-  taxId         String?
-  role          String     @default("CUSTOMER")
-  banExpiresAt  DateTime?
+  id             Int      @id @default(autoincrement())
+  email          String   @unique
+  name           String?
+  password       String?
+  googleId       String?  @unique
+  phone          String?
+  bio            String?
+  country        String?
+  city           String?
+  postalCode     String?
+  taxId          String?
+  avatar         String?  
+  role           String   @default("CUSTOMER")
+  loyaltyPoints  Int      @default(0)
+  otp            String?
+  otpExpires     DateTime?
+  isActive       Boolean  @default(false)
+  refreshToken   String?
+  wishlist       Wishlist[]
+  cart           Cart?
+  orders         Order[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
   banReason     String?
-  cart          Cart?
-  orders        Order[]
-  wishlist      Wishlist[]
+  banExpiresAt  DateTime?
 }
 
 model Category {
