@@ -7,11 +7,7 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Role {
-  CUSTOMER
-  ADMIN
-  SUPER_ADMIN
-}
+
 
 
 model LoyaltyLevel {
@@ -152,8 +148,9 @@ model Banner {
   createdAt      DateTime @default(now())
 }
 
+
 enum Role {
-  ADMIN
   CUSTOMER
+  ADMIN
   SUPER_ADMIN
 }
