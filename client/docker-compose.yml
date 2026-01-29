@@ -1,0 +1,18 @@
+services:
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: anjun_baby_client
+    env_file: .env.local
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+    ports:
+      - "3000:3000"
+    networks:
+      - anjun_network
+    restart: unless-stopped
+
+networks:
+  anjun_network:
+    driver: bridge

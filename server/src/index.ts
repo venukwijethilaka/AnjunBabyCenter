@@ -7,7 +7,8 @@ import dotenv from "dotenv";
 
 //import routes
 import productRoutes from './routes/product.route.js';
-import categoryRoutes from './routes/category.route.js'
+import categoryRoutes from './routes/category.route.js';
+import getAuthParams from './routes/product.route.js'
 //load enviromnental variables
 dotenv.config();
 
@@ -21,8 +22,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 
 //routes
+app.get("/imagekit-auth", getAuthParams);
 app.use("/products", productRoutes);
-app.use("/category",categoryRoutes);
+app.use("/categories", categoryRoutes);
 //server
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {

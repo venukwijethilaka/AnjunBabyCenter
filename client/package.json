@@ -10,6 +10,9 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.2",
+    "imagekit": "^6.0.0",
+    "imagekitio-next": "^1.0.1",
+    "imagekitio-react": "^4.3.0",
     "lucide-react": "^0.563.0",
     "next": "16.1.4",
     "react": "19.2.3",

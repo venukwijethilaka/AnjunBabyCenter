@@ -39,7 +39,7 @@ export interface Product {
   price: number;
   quantity: number;
   availability: boolean;
-  imageUrl: string;
+  images: { url: string; isMain: boolean }[];
   isFeatured: boolean;
   isTrending: boolean;
   isFlashSale: boolean;
@@ -50,6 +50,13 @@ export interface Product {
   cartItems?: CartItem[];
   orderItems?: OrderItem[];
   createdAt: Date;
+}
+export interface ProductImage {
+  id: number;
+  url: string;
+  altText?: string | null;
+  isMain: boolean;
+  productId: number;
 }
 
 export interface Wishlist {
@@ -114,7 +121,8 @@ export interface CreateProductInput {
   description: string;
   price: number;
   quantity: number;
-  imageUrl: string;
+  // Replace imageUrl with an array
+  images: { url: string; isMain?: boolean; altText?: string }[]; 
   categoryId: number;
   color?: string | null;
   size?: string | null;
@@ -124,7 +132,6 @@ export interface CreateProductInput {
   isFlashSale?: boolean;
   discountPercentage?: number | null;
 }
-
 export interface UpdateProductInput extends Partial<CreateProductInput> {}
 
 export interface ApiResponse<T> {
@@ -141,8 +148,19 @@ export const api = createApi({
       }
     }),
     reducerPath: "api",
-    tagTypes: ["Products"],
+    tagTypes: ["Products", "Categories"],
     endpoints: (build) => ({
+        // GET all categories
+        getCategories: build.query<Category[], void>({
+            query: () => ({
+                url: "/categories",
+                method: "GET",
+            }),
+            transformResponse: (response: ApiResponse<Category[]>) => response.data,
+            providesTags: ["Categories"],
+            keepUnusedDataFor: 300,
+        }),
+
         // GET all products
         getProducts: build.query<Product[], void>({
             query: () => ({
@@ -151,6 +169,7 @@ export const api = createApi({
             }),
             transformResponse: (response: ApiResponse<Product[]>) => response.data,
             providesTags: ["Products"],
+            keepUnusedDataFor: 300,
         }),
 
         // GET product by ID
@@ -198,6 +217,7 @@ export const api = createApi({
 });
 
 export const { 
+    useGetCategoriesQuery,
     useGetProductsQuery,
     useGetProductByIdQuery,
     useCreateProductMutation,
