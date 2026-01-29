@@ -53,7 +53,7 @@ model Product {
   price              Decimal     @db.Decimal(10, 2)
   quantity           Int
   availability       Boolean     @default(true)
-  imageUrl           String
+  images             ProductImage[]
   isFeatured         Boolean     @default(false)
   isTrending         Boolean     @default(false)
   isFlashSale        Boolean     @default(false)
@@ -64,6 +64,15 @@ model Product {
   orderItems         OrderItem[]
   category           Category    @relation(fields: [categoryId], references: [id])
   wishlist           Wishlist[]
+}
+model ProductImage {
+  id        Int     @id @default(autoincrement())
+  url       String
+  altText   String? // Good for SEO and accessibility
+  isMain    Boolean @default(false) // To identify the thumbnail/primary image
+  
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Wishlist {

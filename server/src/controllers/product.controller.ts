@@ -1,17 +1,18 @@
 import type { Request, Response } from "express";
 import * as productService from "../services/product.service.js";
-
 export const createProduct = async (req: Request, res: Response) => {
     try {
-        // Validate required fields
-        const { name, description, price, quantity, imageUrl, categoryId } = req.body;
         
-        if (!name || !description || !price || !imageUrl || !categoryId || quantity === undefined) {
+        const { name, description, price, quantity, images, categoryId } = req.body;
+        
+        // 2. Update the validation check
+        if (!name || !description || !price || !images || !images.length || !categoryId || quantity === undefined) {
             return res.status(400).json({ 
-                message: "Missing required fields: name, description, price, imageUrl, categoryId, quantity" 
+                message: "Missing required fields: name, description, price, images (array), categoryId, quantity" 
             });
         }
 
+        // 3. Pass 'images' to the service
         const product = await productService.createProduct({
             name,
             description,
@@ -19,13 +20,13 @@ export const createProduct = async (req: Request, res: Response) => {
             size: req.body.size,
             price: req.body.price,
             quantity: req.body.quantity,
-            imageUrl: req.body.imageUrl,
+            images: req.body.images, // Now passing the array
             availability: req.body.availability ?? true,
             isFeatured: req.body.isFeatured ?? false,
             isTrending: req.body.isTrending ?? false,
             isFlashSale: req.body.isFlashSale ?? false,
             discountPercentage: req.body.discountPercentage,
-            categoryId: req.body.categoryId,
+            categoryId: Number(req.body.categoryId),
         });
 
         res.status(201).json({
@@ -74,7 +75,6 @@ export const getProductById = async (req: Request, res: Response) => {
         res.status(500).json({ message: "Error in fetching product by id", error });
     }
 };
-
 export const updateProduct = async (req: Request, res: Response) => {
     try {
         const id = Number(req.params.id);
@@ -83,44 +83,42 @@ export const updateProduct = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Invalid product ID" });
         }
 
-        // Check if product exists
+        const updateData = req.body.data || req.body; 
+
         const existingProduct = await productService.getProductById(id);
         if (!existingProduct) {
             return res.status(404).json({ message: "Product not found" });
         }
 
-        // Validate that at least some fields are being updated
-        const updateData = req.body;
-        if (Object.keys(updateData).length === 0) {
-            return res.status(400).json({ message: "No fields to update" });
-        }
-
+        // We cast the entire object to 'any' to bypass strict property checks
         const updatedProduct = await productService.updateProduct(id, {
             name: updateData.name,
             description: updateData.description,
-            color: updateData.color,
-            size: updateData.size,
-            price: updateData.price,
-            quantity: updateData.quantity,
-            imageUrl: updateData.imageUrl,
+            color: updateData.color || null,
+            size: updateData.size || null,
+            price: updateData.price !== undefined ? Number(updateData.price) : undefined,
+            quantity: updateData.quantity !== undefined ? Number(updateData.quantity) : undefined,
+            images: updateData.images,
             availability: updateData.availability,
             isFeatured: updateData.isFeatured,
             isTrending: updateData.isTrending,
             isFlashSale: updateData.isFlashSale,
-            discountPercentage: updateData.discountPercentage,
-            categoryId: updateData.categoryId,
-        });
+            discountPercentage: updateData.discountPercentage !== undefined ? Number(updateData.discountPercentage) : undefined,
+            categoryId: updateData.categoryId ? Number(updateData.categoryId) : undefined,
+        } as any); 
 
         res.status(200).json({
             message: "Product updated successfully",
             data: updatedProduct,
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error updating product:", error);
-        res.status(500).json({ message: "Failed to update product", error });
+        res.status(500).json({ 
+            message: error.message || "Failed to update product", 
+            error: process.env.NODE_ENV === 'development' ? error : undefined 
+        });
     }
 };
-
 export const deleteProduct = async (req: Request, res: Response) => {
     try {
         const id = Number(req.params.id);
