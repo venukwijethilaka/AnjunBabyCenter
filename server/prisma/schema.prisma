@@ -55,7 +55,7 @@ model Product {
   price              Decimal     @db.Decimal(10, 2)
   quantity           Int
   availability       Boolean     @default(true)
-  images             ProductImage[]
+  imageUrl           String
   isFeatured         Boolean     @default(false)
   isTrending         Boolean     @default(false)
   isFlashSale        Boolean     @default(false)
