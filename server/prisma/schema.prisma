@@ -28,6 +28,8 @@ model User {
   postalCode    String?
   taxId         String?
   role          String     @default("CUSTOMER")
+  banExpiresAt  DateTime?
+  banReason     String?
   cart          Cart?
   orders        Order[]
   wishlist      Wishlist[]
@@ -64,15 +66,6 @@ model Product {
   orderItems         OrderItem[]
   category           Category    @relation(fields: [categoryId], references: [id])
   wishlist           Wishlist[]
-}
-model ProductImage {
-  id        Int     @id @default(autoincrement())
-  url       String
-  altText   String? // Good for SEO and accessibility
-  isMain    Boolean @default(false) // To identify the thumbnail/primary image
-  
-  productId Int
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Wishlist {
@@ -137,4 +130,5 @@ model Banner {
 enum Role {
   ADMIN
   CUSTOMER
+  SUPER_ADMIN
 }
