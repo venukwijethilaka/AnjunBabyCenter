@@ -14,8 +14,9 @@ datasource db {
 }
 
 enum Role {
-  ADMIN
   CUSTOMER
+  ADMIN
+  SUPER_ADMIN
 }
 
 model User {
@@ -42,6 +43,8 @@ model User {
   orders         Order[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  banReason     String?
+  banExpiresAt  DateTime?
 }
 
 model Category {
