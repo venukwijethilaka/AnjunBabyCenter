@@ -1,37 +1,34 @@
 # Build stage
 FROM node:20-alpine AS builder
-
 WORKDIR /app
 
-# Copy package files
+# Check for package files
 COPY package.json package-lock.json* ./
 
-# Install dependencies
-RUN npm ci --legacy-peer-deps
+# Use a cache mount to speed up npm and handle memory better
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --legacy-peer-deps
 
-# Copy source code
 COPY . .
 
-# Build the Next.js application
+# Next.js 15+ needs more memory for building
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN npm run build
 
 # Production stage
-FROM node:20-alpine
-
+FROM node:20-alpine AS runner
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json* ./
+ENV NODE_ENV=production
 
-# Install production dependencies only
+# Copy only necessary files for a smaller footprint
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/package-lock.json* ./
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next ./.next
+
+# Production install
 RUN npm ci --omit=dev --legacy-peer-deps
 
-# Copy built application from builder stage
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-
-# Expose port
 EXPOSE 3000
-
-# Start the application
 CMD ["npm", "start"]
