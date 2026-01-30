@@ -153,8 +153,3 @@ model Banner {
   createdAt      DateTime @default(now())
 }
 
-enum Role {
-  ADMIN
-  CUSTOMER
-  SUPER_ADMIN
-}
