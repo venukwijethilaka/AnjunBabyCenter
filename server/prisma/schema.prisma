@@ -18,6 +18,7 @@ model LoyaltyLevel {
   id           Int      @id @default(autoincrement())
   name         String   @unique // e.g., "Silver"
   minPoints    Int
+  discount Int @default(0)
   color        String
   badgeColor   String
   updatedAt    DateTime @updatedAt
