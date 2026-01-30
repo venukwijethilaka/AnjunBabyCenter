@@ -1,25 +1,23 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { configureStore } from "@reduxjs/toolkit";
+import { setupListeners } from "@reduxjs/toolkit/query";
+import { api } from "./api";
+import authReducer from "./authSlice";
+import globalReducer from "./globalSlice"; 
 
-export interface InitialStateTypes {
-    isSidebarCollapsed: boolean;
-}
+// Configure the Store
+export const store = configureStore({
+  reducer: {
+    global: globalReducer,      // UI State (Sidebar)
+    auth: authReducer,          // User State (Login/Loyalty)
+    [api.reducerPath]: api.reducer, // API Cache
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(api.middleware),
+});
 
-const initialState: InitialStateTypes = {
-    isSidebarCollapsed: false,
-}
+// Enable listener behavior for the API (required for refetchOnFocus/Reconnect)
+setupListeners(store.dispatch);
 
-export const globalSlice = createSlice({
-    name: "global",
-    initialState,
-    reducers: {
-        setIsSidebarCollapsed: (state, action: PayloadAction<boolean>) => {
-            state.isSidebarCollapsed = action.payload;
-        }
-    }
-})
-
-
-export const { setIsSidebarCollapsed } = globalSlice.actions;
-
-export default globalSlice.reducer;
-
+// Export Types for TypeScript
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;

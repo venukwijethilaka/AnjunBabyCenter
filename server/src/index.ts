@@ -5,25 +5,31 @@ import morgan from "morgan";
 import helmet from "helmet";
 import dotenv from "dotenv";
 
-//import routes
-import productRoutes from './routes/product.route.js';
-import categoryRoutes from './routes/category.route.js'
-//load enviromnental variables
+import userRoutes from './routes/user.route.js';
+import productRoutes from './routes/product.route.js'; 
+import categoryRoutes from './routes/category.route.js';
+
 dotenv.config();
 
-//other configurations
 const app = express();
-app.use(express.json());
+
 app.use(helmet());
 app.use(morgan("common"));
+app.use(express.json({ limit: "10mb" })); 
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cors());
 
-//routes
+app.use(cors({
+    origin: ["http://localhost:3000"], 
+    credentials: true
+}));
+
+// Routes
 app.use("/products", productRoutes);
-app.use("/category",categoryRoutes);
-//server
+app.use("/category", categoryRoutes);
+app.use("/users", userRoutes); 
+
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
