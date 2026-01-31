@@ -3,7 +3,7 @@ import { LoyaltyLevel } from "./api";
 export const calculateLevel = (points: number, tiers: LoyaltyLevel[] | undefined) => {
     // Default fallback if DB is empty or loading
     const defaultLevel: LoyaltyLevel = { 
-        id: 0, name: "Member", minPoints: 0, 
+        id: 0, name: "Member", minPoints: 0, discount: 0,
         color: "from-gray-400 to-gray-500", badgeColor: "bg-gray-50", updatedAt: new Date() 
     };
 

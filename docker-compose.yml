@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: anjun_baby_server
+    ports:
+      - "8000:8000"
+
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    networks:
+      - anjun_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/products"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_GOOGLE_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+    container_name: anjun_baby_client
+
+
+    ports:
+      - "3000:3000"
+    networks:
+      - anjun_network
+    restart: unless-stopped
+    depends_on:
+      server:
+        condition: service_healthy
+
+networks:
+  anjun_network:
+    driver: bridge

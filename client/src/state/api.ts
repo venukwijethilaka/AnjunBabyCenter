@@ -19,22 +19,37 @@ export interface LoyaltyLevel {
   badgeColor: string;
   updatedAt: Date;
 }
-
 export interface User {
   id: number;
-  name: string;
   email: string;
-  password?: string;
-  phoneNumber?: string;
+  name?: string | null;
+  password?: string | null;
+  googleId?: string | null;
+
+  phone?: string | null;
+  bio?: string | null;
+  country?: string | null;
+  city?: string | null;
+  postalCode?: string | null;
+  taxId?: string | null;
+  avatar?: string | null;
+
   role: Role;
-  isActive: boolean;
   loyaltyPoints: number;
-  createdAt: Date;
+  otp?: string | null;
+  otpExpires?: string | null;
+  isActive: boolean;
+  refreshToken?: string | null;
+
+  wishlist?: Wishlist[];
+  cart?: Cart | null;
+  orders?: Order[];
+
+  createdAt: string;
+  updatedAt: string;
+
   banReason?: string | null;
   banExpiresAt?: string | null;
-  wishlist?: Wishlist[];
-  cart?: Cart;
-  orders?: Order[];
 }
 
 export interface Category {

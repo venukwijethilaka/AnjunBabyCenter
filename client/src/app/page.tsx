@@ -49,7 +49,7 @@ export default function Home() {
           ) : (
             <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full border border-gray-100">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-sm font-bold text-gray-700">Hi, {user.name.split(' ')[0]}</span>
+              <span className="text-sm font-bold text-gray-700">Hi, {user && user.name ? user.name.split(' ')[0] : ''}</span>
             </div>
           )}
         </div>

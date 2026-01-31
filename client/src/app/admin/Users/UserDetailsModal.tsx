@@ -58,7 +58,7 @@ const UserDetailsModal = ({ isOpen, onClose, user }: UserDetailsModalProps) => {
                     </div>
                     <div className="flex justify-between border-b border-gray-100 pb-2">
                         <span className="text-gray-500">Phone</span>
-                        <span className="font-medium text-gray-900">{user.phoneNumber || "N/A"}</span>
+                        <span className="font-medium text-gray-900">{user.phone || "N/A"}</span>
                     </div>
                     <div className="flex justify-between pt-1">
                         <span className="text-gray-500">Joined</span>
