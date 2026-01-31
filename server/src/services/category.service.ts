@@ -19,3 +19,11 @@ export const createCategory = (data: {
         }
     })
 }
+
+export const getAllCategories = () => {
+    return prisma.category.findMany({
+        include: {
+            children: true,
+        }
+    })
+}

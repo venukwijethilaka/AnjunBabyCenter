@@ -1,32 +1,11 @@
 import type { Request, Response } from "express";
-import * as productService from "../services/product.service.js";
+import * as productService from "../services/product.service";
 
 export const createProduct = async (req: Request, res: Response) => {
     try {
-        // Validate required fields
-        const { name, description, price, quantity, imageUrl, categoryId } = req.body;
-        
-        if (!name || !description || !price || !imageUrl || !categoryId || quantity === undefined) {
-            return res.status(400).json({ 
-                message: "Missing required fields: name, description, price, imageUrl, categoryId, quantity" 
-            });
-        }
-
-        const product = await productService.createProduct({
-            name,
-            description,
-            color: req.body.color,
-            size: req.body.size,
-            price: req.body.price,
-            quantity: req.body.quantity,
-            imageUrl: req.body.imageUrl,
-            availability: req.body.availability ?? true,
-            isFeatured: req.body.isFeatured ?? false,
-            isTrending: req.body.isTrending ?? false,
-            isFlashSale: req.body.isFlashSale ?? false,
-            discountPercentage: req.body.discountPercentage,
-            categoryId: req.body.categoryId,
-        });
+        // The service layer now expects the full body which includes the images array.
+        // The Prisma schema will validate the required fields.
+        const product = await productService.createProduct(req.body);
 
         res.status(201).json({
             message: "Product created successfully",
@@ -34,6 +13,10 @@ export const createProduct = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error("Error creating product:", error);
+        // Handle potential validation errors from Prisma
+        if (error instanceof Error && error.message.includes('validation')) {
+            return res.status(400).json({ message: error.message });
+        }
         res.status(500).json({ message: "Internal server error", error });
     }
 };
@@ -95,21 +78,7 @@ export const updateProduct = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "No fields to update" });
         }
 
-        const updatedProduct = await productService.updateProduct(id, {
-            name: updateData.name,
-            description: updateData.description,
-            color: updateData.color,
-            size: updateData.size,
-            price: updateData.price,
-            quantity: updateData.quantity,
-            imageUrl: updateData.imageUrl,
-            availability: updateData.availability,
-            isFeatured: updateData.isFeatured,
-            isTrending: updateData.isTrending,
-            isFlashSale: updateData.isFlashSale,
-            discountPercentage: updateData.discountPercentage,
-            categoryId: updateData.categoryId,
-        });
+        const updatedProduct = await productService.updateProduct(id, updateData);
 
         res.status(200).json({
             message: "Product updated successfully",

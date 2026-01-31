@@ -29,7 +29,13 @@ export default function SignInPage() {
   const [googleLoginApi, { isLoading: isGoogleLoading }] = useGoogleLoginMutation();
 
   useEffect(() => {
-    if (user) { router.push('/client/homePage'); }
+    if (user) {
+      if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
+        router.push('/admin');
+      } else {
+        router.push('/client/homePage');
+      }
+    }
   }, [user, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -60,7 +66,11 @@ export default function SignInPage() {
           localStorage.clear();
       }
 
-      router.push('/client/homePage');
+      if (result.user.role === 'ADMIN' || result.user.role === 'SUPER_ADMIN') {
+        router.push('/admin');
+      } else {
+        router.push('/client/homePage');
+      }
     } catch (err: any) {
         // Handle Ban 403 Error
         if (err?.status === 403 && err?.data?.isBanned) {
@@ -87,7 +97,11 @@ export default function SignInPage() {
         if(result.refreshToken) localStorage.setItem("refreshToken", result.refreshToken);
         
         dispatch(setCredentials({ user: result.user, token: result.accessToken, refreshToken: result.refreshToken }));
+        if (result.user.role === 'ADMIN' || result.user.role === 'SUPER_ADMIN') {
+        router.push('/admin');
+      } else {
         router.push('/client/homePage');
+      }
       } catch (err: any) { 
           if (err?.status === 403 && err?.data?.isBanned) {
             setBanDetails({

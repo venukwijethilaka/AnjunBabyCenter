@@ -5,13 +5,15 @@ import morgan from "morgan";
 import helmet from "helmet";
 import dotenv from "dotenv";
 
-import userRoutes from './routes/user.route.js';
-import productRoutes from './routes/product.route.js'; 
-import categoryRoutes from './routes/category.route.js';
+import userRoutes from './routes/user.route';
+import productRoutes from './routes/product.route'; 
+import categoryRoutes from './routes/category.route';
+import imagekitRoutes from './routes/imagekit.route';
 
 dotenv.config();
 
 const app = express();
+
 
 app.use(helmet());
 app.use(morgan("common"));
@@ -27,9 +29,9 @@ app.use(cors({
 
 // Routes
 app.use("/products", productRoutes);
-app.use("/category", categoryRoutes);
-app.use("/users", userRoutes); 
-
+app.use("/categories", categoryRoutes);
+app.use("/users", userRoutes);
+app.use("/imagekit", imagekitRoutes);
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

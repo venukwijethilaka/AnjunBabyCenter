@@ -1,44 +1,40 @@
 import prisma from "../../prisma";
 import { Prisma } from "../../generated/prisma/client";
 
-export const createProduct = async (
-    data: {
-        name: string;
-        description: string;
-        color?: string;
-        size?: string;
-        price: Prisma.Decimal;
-        quantity: number;
-        imageUrl: string;
-        availability?: boolean;
-        isFeatured?: boolean;
-        isTrending?: boolean;
-        isFlashSale?: boolean;
-        discountPercentage?: Prisma.Decimal;
-        categoryId: number;
-    }
-) => {
+export const createProduct = async (data: {
+    name: string;
+    description: string;
+    color?: string;
+    size?: string;
+    price: Prisma.Decimal;
+    quantity: number;
+    availability?: boolean;
+    isFeatured?: boolean;
+    isTrending?: boolean;
+    isFlashSale?: boolean;
+    discountPercentage?: Prisma.Decimal;
+    categoryId: number;
+    images: { url: string; isMain: boolean; altText?: string }[];
+}) => {
+    const { categoryId, images, ...productData } = data;
+
     return prisma.product.create({
         data: {
-            name: data.name,
-            description: data.description,
-            color: data.color ?? null,
-            size: data.size ?? null,
-            price: data.price,
-            quantity: data.quantity,
-            imageUrl: data.imageUrl,
-            availability: data.availability ?? true,
-            isFeatured: data.isFeatured ?? false,
-            isTrending: data.isTrending ?? false,
-            isFlashSale: data.isFlashSale ?? false,
-            discountPercentage: data.discountPercentage ?? null,
+            ...productData,
             category: {
                 connect: {
-                    id: data.categoryId,
+                    id: categoryId,
                 },
             },
+            images: {
+                create: images.map(img => ({
+                    url: img.url,
+                    isMain: img.isMain,
+                    altText: img.altText || productData.name, // Use product name as fallback alt text
+                })),
+            },
         },
-        include: { category: true },
+        include: { category: true, images: true },
     });
 };
 
@@ -51,7 +47,7 @@ interface GetProductsQuery {
 
 export const getProducts = async () => {
   return prisma.product.findMany({
-    include: { category: true },
+    include: { category: true, images: true },
     orderBy: { createdAt: "desc" },
   });
 };
@@ -59,7 +55,7 @@ export const getProducts = async () => {
 export const getProductById = async (id: number) => {
   return prisma.product.findUnique({
     where: { id },
-    include: { category: true },
+    include: { category: true, images: true },
   });
 };
 
@@ -72,39 +68,54 @@ export const updateProduct = async (
     size?: string;
     price?: Prisma.Decimal;
     quantity?: number;
-    imageUrl?: string;
     availability?: boolean;
     isFeatured?: boolean;
     isTrending?: boolean;
     isFlashSale?: boolean;
     discountPercentage?: Prisma.Decimal;
     categoryId?: number;
+    images?: { url: string; isMain: boolean; altText?: string }[];
   }
 ) => {
-  return prisma.product.update({
-    where: { id },
-    data: {
-      ...(data.name && { name: data.name }),
-      ...(data.description && { description: data.description }),
-      ...(data.color !== undefined && { color: data.color ?? null }),
-      ...(data.size !== undefined && { size: data.size ?? null }),
-      ...(data.price && { price: data.price }),
-      ...(data.quantity !== undefined && { quantity: data.quantity }),
-      ...(data.imageUrl && { imageUrl: data.imageUrl }),
-      ...(data.availability !== undefined && { availability: data.availability }),
-      ...(data.isFeatured !== undefined && { isFeatured: data.isFeatured }),
-      ...(data.isTrending !== undefined && { isTrending: data.isTrending }),
-      ...(data.isFlashSale !== undefined && { isFlashSale: data.isFlashSale }),
-      ...(data.discountPercentage !== undefined && { discountPercentage: data.discountPercentage ?? null }),
-      ...(data.categoryId && {
-        category: {
-          connect: {
-            id: data.categoryId,
+  const { images, categoryId, ...productData } = data;
+
+  return prisma.$transaction(async (tx) => {
+    // 1. Update scalar fields of the product
+    const updatedProduct = await tx.product.update({
+      where: { id },
+      data: {
+        ...productData,
+        ...(categoryId && {
+          category: {
+            connect: { id: categoryId },
           },
-        },
-      }),
-    },
-    include: { category: true },
+        }),
+      },
+    });
+
+    // 2. If new images are provided, replace the old ones
+    if (images) {
+      // First, delete all existing images for this product
+      await tx.productImage.deleteMany({
+        where: { productId: id },
+      });
+
+      // Then, create the new set of images
+      await tx.productImage.createMany({
+        data: images.map(img => ({
+          url: img.url,
+          isMain: img.isMain,
+          altText: img.altText || updatedProduct.name,
+          productId: id,
+        })),
+      });
+    }
+
+    // 3. Return the fully updated product with all relations
+    return tx.product.findUnique({
+      where: { id },
+      include: { category: true, images: true },
+    });
   });
 };
 

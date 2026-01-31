@@ -47,13 +47,15 @@ export default function SimpleHomePage() {
           </Link>
 
           {/* Shop Link (Future) */}
-          <div className="bg-white p-6 rounded-3xl border border-gray-200 opacity-60 text-center">
-            <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <ShoppingCart className="text-gray-400" />
+          <Link href="/client/product">
+            <div className="bg-white p-6 rounded-3xl border border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all group cursor-pointer text-center">
+              <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-100 transition-colors">
+                <ShoppingCart className="text-gray-600 group-hover:text-blue-600" />
+              </div>
+              <h3 className="font-bold text-gray-900">View Products</h3>
+              <p className="text-xs text-gray-400 mt-1">Browse all baby products</p>
             </div>
-            <h3 className="font-bold text-gray-400">Products</h3>
-            <p className="text-xs text-gray-400 mt-1">Coming Soon</p>
-          </div>
+          </Link>
 
           {/* Wishlist Link (Future) */}
           <div className="bg-white p-6 rounded-3xl border border-gray-200 opacity-60 text-center">
@@ -71,6 +73,7 @@ export default function SimpleHomePage() {
           <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-blue-600 transition-colors">
             <Home size={16} /> Back to Main Landing
           </Link>
+          
         </div>
 
       </div>

@@ -63,6 +63,7 @@ export interface Category {
   createdAt: Date;
 }
 
+
 export interface Product {
   id: number;
   name: string;
@@ -72,7 +73,7 @@ export interface Product {
   price: number;
   quantity: number;
   availability: boolean;
-  imageUrl: string;
+  images: { url: string; isMain: boolean }[];
   isFeatured: boolean;
   isTrending: boolean;
   isFlashSale: boolean;
@@ -83,6 +84,13 @@ export interface Product {
   cartItems?: CartItem[];
   orderItems?: OrderItem[];
   createdAt: Date;
+}
+export interface ProductImage {
+  id: number;
+  url: string;
+  altText?: string | null;
+  isMain: boolean;
+  productId: number;
 }
 
 export interface Wishlist {
@@ -260,7 +268,7 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
 export const api = createApi({
   baseQuery: baseQueryWithReauth, 
   reducerPath: "api",
-  tagTypes: ["Products", "User", "Loyalty"], // ✅ Added Loyalty Tag
+  tagTypes: ["Products", "User", "Loyalty","Categories"], // ✅ Added Loyalty Tag
   endpoints: (build) => ({
       
       // --- AUTH ENDPOINTS ---
@@ -411,6 +419,17 @@ export const api = createApi({
           transformResponse: (response: ApiResponse<Product>) => response.data,
           invalidatesTags: ["Products"],
       }),
+
+      // --- CATEGORIES ENDPOINTS ---
+      getCategories: build.query<Category[], void>({
+            query: () => ({
+                url: "/categories",
+                method: "GET",
+            }),
+            transformResponse: (response: ApiResponse<Category[]>) => response.data,
+            providesTags: ["Categories"],
+            keepUnusedDataFor: 300,
+        }),
       
       // --- PASSWORD RECOVERY ---
       forgotPassword: build.mutation<{ message: string }, { email: string }>({
@@ -460,5 +479,6 @@ export const {
   useGetLoyaltyLevelsQuery,
   useCreateLoyaltyLevelMutation,
   useUpdateLoyaltyLevelMutation,
-  useDeleteLoyaltyLevelMutation
+  useDeleteLoyaltyLevelMutation,
+  useGetCategoriesQuery
 } = api;
