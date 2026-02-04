@@ -453,6 +453,22 @@ export const api = createApi({
               body: data,
           }),
       }),
+
+      // --- CART  ---
+      addToCart: build.mutation<CartItem, { userId: number; productId: number }>({
+          query: (data) => ({
+              url: "/cart",
+              method: "POST",
+              body: data,
+          }),
+      }),
+
+      getCart: build.query<Cart, number>({
+          query: (userId) => ({
+              url: `/cart/${userId}`,
+              method: "GET",
+          }),
+      }),
   })
 });
 
@@ -480,5 +496,8 @@ export const {
   useCreateLoyaltyLevelMutation,
   useUpdateLoyaltyLevelMutation,
   useDeleteLoyaltyLevelMutation,
-  useGetCategoriesQuery
+  useGetCategoriesQuery,
+  //Cart 
+  useAddToCartMutation,
+  useGetCartQuery
 } = api;

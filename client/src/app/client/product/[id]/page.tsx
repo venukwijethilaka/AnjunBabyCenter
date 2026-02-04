@@ -33,10 +33,70 @@ function ProductDetailPageContent({ id }: ProductDetailPageContentProps) {
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const { data: product, isLoading, error } = useGetProductByIdQuery(parseInt(id), {
     skip: !id,
   });
+
+  const handleAddToBag = async () => {
+    try {
+      // Get user from localStorage or sessionStorage
+      const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+      if (!userStr) {
+        setNotification({ message: 'Please log in to add items to cart', type: 'error' });
+        router.push('/client/sign-in');
+        return;
+      }
+
+      const user = JSON.parse(userStr);
+      setIsAddingToCart(true);
+
+      // Add to cart for each quantity
+      for (let i = 0; i < quantity; i++) {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/cart`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.id,
+              productId: parseInt(id),
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to add to cart');
+        }
+
+        console.log(`Item ${i + 1} added to cart`);
+      }
+
+      setNotification({ 
+        message: `${product?.name} added to bag!`, 
+        type: 'success' 
+      });
+
+      // Trigger cart refresh
+      console.log('Dispatching cartUpdated event from product detail...');
+      window.dispatchEvent(new Event('cartUpdated'));
+      localStorage.setItem('cartUpdated', Date.now().toString());
+
+      // Auto-hide notification after 3 seconds
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error: any) {
+      console.error('Error adding to bag:', error);
+      setNotification({ 
+        message: 'Failed to add item to bag', 
+        type: 'error' 
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -69,6 +129,17 @@ function ProductDetailPageContent({ id }: ProductDetailPageContentProps) {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-pink-50 via-yellow-50 to-blue-50">
+      {/* Notification Toast */}
+      {notification && (
+        <div className={`fixed top-6 right-6 px-6 py-4 rounded-xl shadow-lg z-50 transition-all duration-300 ${
+          notification.type === 'success' 
+            ? 'bg-green-500 text-white' 
+            : 'bg-red-500 text-white'
+        }`}>
+          {notification.message}
+        </div>
+      )}
+
       {/* Header */}
       
 
@@ -162,11 +233,21 @@ function ProductDetailPageContent({ id }: ProductDetailPageContentProps) {
             {/* Primary Actions */}
             <div className="flex gap-4">
               <button
-                disabled={!product.availability || product.quantity === 0}
+                onClick={handleAddToBag}
+                disabled={!product.availability || product.quantity === 0 || isAddingToCart}
                 className="flex-[4] bg-linear-to-r from-pink-500 to-rose-500 text-white py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-lg shadow-pink-200 hover:shadow-pink-300 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:translate-y-0"
               >
-                <ShoppingCart className="w-6 h-6" />
-                {product.quantity === 0 ? 'Out of Stock' : 'Add to Bag'}
+                {isAddingToCart ? (
+                  <>
+                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="w-6 h-6" />
+                    {product.quantity === 0 ? 'Out of Stock' : 'Add to Bag'}
+                  </>
+                )}
               </button>
 
               <button
