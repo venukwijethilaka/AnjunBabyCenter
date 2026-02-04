@@ -10,6 +10,7 @@ import productRoutes from './routes/product.route';
 import categoryRoutes from './routes/category.route';
 import imagekitRoutes from './routes/imagekit.route';
 import cartRoutes from './routes/cart.route';
+import wishlistRoutes from './routes/wishlist.route';
 
 dotenv.config();
 
@@ -35,6 +36,7 @@ app.use("/categories", categoryRoutes);
 app.use("/users", userRoutes);
 app.use("/imagekit", imagekitRoutes);
 app.use("/cart", cartRoutes);
+app.use("/wishlist", wishlistRoutes);
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {

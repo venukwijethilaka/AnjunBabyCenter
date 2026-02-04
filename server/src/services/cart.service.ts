@@ -59,12 +59,20 @@ export const addToCart = async (
       }
     };
 
-    // 3. Increase quantity if exists
+    // 3. Increase quantity if exists (but check stock first)
     if (existingItem) {
+      // Check if the new quantity would exceed available stock
+      const newQuantity = existingItem.quantity + 1;
+      if (newQuantity > product.quantity) {
+        throw new Error(
+          `Cannot add more items. Only ${product.quantity} units available in stock. You already have ${existingItem.quantity} in cart.`
+        );
+      }
+      
       return prisma.cartItem.update({
         where: { id: existingItem.id },
-        data: { quantity: existingItem.quantity + 1 },
-        include: productWithImageInclude, // 👈 Updated to return image on add
+        data: { quantity: newQuantity },
+        include: productWithImageInclude,
       });
     }
 

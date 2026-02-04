@@ -17,9 +17,8 @@ export const addItemToCart = async (req: Request, res: Response) => {
     res.status(200).json(item);
   } catch (error: any) {
     console.error('Add to cart error:', error);
-    res.status(500).json({ 
-      message: "Failed to add item to cart",
-      error: error?.message || "UNKNOWN_ERROR"
+    res.status(400).json({ 
+      message: error?.message || "UNKNOWN_ERROR"
     });
   }
 };

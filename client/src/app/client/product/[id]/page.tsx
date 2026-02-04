@@ -98,6 +98,69 @@ function ProductDetailPageContent({ id }: ProductDetailPageContentProps) {
     }
   };
 
+  const handleWishlistToggle = async () => {
+    try {
+      const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+      if (!userStr) {
+        setNotification({ message: 'Please log in to add to wishlist', type: 'error' });
+        router.push('/client/sign-in');
+        return;
+      }
+
+      const user = JSON.parse(userStr);
+      const userId = user.id;
+      const productId = parseInt(id);
+
+      if (isWishlisted) {
+        // Remove from wishlist
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/wishlist/${userId}/${productId}`,
+          { method: 'DELETE' }
+        );
+
+        if (response.ok) {
+          setIsWishlisted(false);
+          setNotification({ 
+            message: 'Removed from wishlist', 
+            type: 'success' 
+          });
+          window.dispatchEvent(new Event('wishlistUpdated'));
+        }
+      } else {
+        // Add to wishlist
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/wishlist`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId,
+              productId,
+            }),
+          }
+        );
+
+        if (response.ok) {
+          setIsWishlisted(true);
+          setNotification({ 
+            message: '❤️ Added to wishlist!', 
+            type: 'success' 
+          });
+          window.dispatchEvent(new Event('wishlistUpdated'));
+        }
+      }
+
+      setTimeout(() => setNotification(null), 2000);
+    } catch (error: any) {
+      console.error('Error toggling wishlist:', error);
+      setNotification({ 
+        message: 'Failed to update wishlist', 
+        type: 'error' 
+      });
+      setTimeout(() => setNotification(null), 3000);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -251,7 +314,7 @@ function ProductDetailPageContent({ id }: ProductDetailPageContentProps) {
               </button>
 
               <button
-                onClick={() => setIsWishlisted(!isWishlisted)}
+                onClick={handleWishlistToggle}
                 className="flex-1 bg-white border border-gray-200 rounded-2xl flex items-center justify-center hover:bg-pink-50 transition-all active:scale-95"
               >
                 <Heart

@@ -41,7 +41,6 @@ const page = (props: Props) => {
             price: Number(item.product?.price) || 0,
             quantity: item.quantity,
             image: productImage,
-            stockQuantity: item.product?.quantity || 0,
           };
         }) || [];
         setCartItems(items);
@@ -182,16 +181,18 @@ const page = (props: Props) => {
       <main className="fixed inset-0 z-10 flex justify-end p-4 sm:p-8">
         <div className="absolute inset-0 bg-black/25 backdrop-blur-sm" />
 
-        <aside className="relative z-10 w-full max-w-lg bg-white/85 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-white/60">
+        <aside className="relative z-10 w-full max-w-2xl bg-white/85 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-white/60">
           {/* Sidebar Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-pink-100">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-gray-500">Anjun Baby Center</p>
-              <h2 className="text-2xl font-bold text-gray-800">Your Cart</h2>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <ShoppingCart className="w-4 h-4" />
-              <span>{cartItems.length} items</span>
+          <div className="bg-gradient-to-r from-pink-400 via-pink-500 to-rose-400 px-6 py-6 border-b border-pink-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-widest text-white/80 font-semibold mb-2">Anjun Baby Center</p>
+                <h2 className="text-3xl font-bold text-white">Your Cart</h2>
+              </div>
+              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white font-semibold">
+                <ShoppingCart className="w-5 h-5" />
+                <span>{cartItems.length}</span>
+              </div>
             </div>
           </div>
 
