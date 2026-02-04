@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Heart, ShoppingCart, Filter, Search } from 'lucide-react'; // Added Search icon
 import { useRouter } from 'next/navigation';
 import { useGetProductsQuery, useGetCategoriesQuery, Product, useAddToCartMutation } from '@/state/api';
@@ -12,11 +12,28 @@ export default function BabyProductsContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [addingToCart, setAddingToCart] = useState<number | null>(null);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [wishlistedProducts, setWishlistedProducts] = useState<number[]>([]);
 
   // 1. FETCH DATA FROM BACKEND
   const { data: products = [], isLoading: productsLoading, error: productsError } = useGetProductsQuery();
   const { data: rawCategories = [], isLoading: categoriesLoading } = useGetCategoriesQuery();
   const [addToCartMutation] = useAddToCartMutation();
+
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/wishlist/${user.id}`);
+        if (response.ok) {
+          const wishlist = await response.json();
+          const wishlistedIds = wishlist.items.map((item: any) => item.productId);
+          setWishlistedProducts(wishlistedIds);
+        }
+      }
+    };
+    fetchWishlist();
+  }, []);
 
   // 2. PROCESS CATEGORIES (Main categories only + "All")
   const displayCategories = useMemo(() => {
@@ -30,7 +47,6 @@ export default function BabyProductsContent() {
     return [{ key: 'all', label: 'All Categories' }, ...mainCategories];
   }, [rawCategories]);
 
-  // 3. COMBINED FILTER & SORT LOGIC
   // 3. COMBINED FILTER & SORT LOGIC
   const filteredProducts = useMemo(() => {
     if (!products) return [];
@@ -70,7 +86,14 @@ export default function BabyProductsContent() {
         if (sortBy === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         return 0;
       });
-  }, [products, selectedCategory, searchQuery, sortBy, rawCategories]); // Dependencies look good
+  }, [products, selectedCategory, searchQuery, sortBy, rawCategories]);
+
+  const productsWithWishlist = useMemo(() => {
+    return filteredProducts.map(p => ({
+        ...p,
+        isWishlisted: wishlistedProducts.includes(p.id)
+    }));
+  }, [filteredProducts, wishlistedProducts]);
 
   // Handle Add to Cart
   const handleAddToCart = async (product: Product) => {
@@ -140,6 +163,71 @@ export default function BabyProductsContent() {
       setTimeout(() => setNotification(null), 3000);
     } finally {
       setAddingToCart(null);
+    }
+  };
+
+  const handleWishlistToggle = async (product: Product) => {
+    try {
+      const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+      if (!userStr) {
+        setNotification({ message: 'Please log in to add to wishlist', type: 'error' });
+        router.push('/client/sign-in');
+        return;
+      }
+
+      const user = JSON.parse(userStr);
+      const userId = user.id;
+      const productId = product.id;
+
+      const isWishlisted = wishlistedProducts.includes(productId);
+
+      if (isWishlisted) {
+        // Remove from wishlist
+        setWishlistedProducts(prev => prev.filter(id => id !== productId));
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/wishlist/${userId}/${productId}`,
+          { method: 'DELETE' }
+        );
+
+        if (response.ok) {
+          setNotification({ 
+            message: 'Removed from wishlist', 
+            type: 'success' 
+          });
+          window.dispatchEvent(new Event('wishlistUpdated'));
+        }
+      } else {
+        // Add to wishlist
+        setWishlistedProducts(prev => [...prev, productId]);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/wishlist`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId,
+              productId,
+            }),
+          }
+        );
+
+        if (response.ok) {
+          setNotification({ 
+            message: '❤️ Added to wishlist!', 
+            type: 'success' 
+          });
+          window.dispatchEvent(new Event('wishlistUpdated'));
+        }
+      }
+
+      setTimeout(() => setNotification(null), 2000);
+    } catch (error: any) {
+      console.error('Error toggling wishlist:', error);
+      setNotification({ 
+        message: 'Failed to update wishlist', 
+        type: 'error' 
+      });
+      setTimeout(() => setNotification(null), 3000);
     }
   };
 
@@ -223,23 +311,31 @@ export default function BabyProductsContent() {
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredProducts.map((product) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          {productsWithWishlist.map((product) => {
             const thumbnail = product.images?.find(img => img.isMain)?.url || 
                               product.images?.[0]?.url || 
                               '/placeholder-baby.png';
 
             return (
-              <div key={product.id} className="group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden">
-                <div 
-                  onClick={() => router.push(`/client/product/${product.id}`)}
-                  className="relative bg-pink-100 p-8 h-64 flex items-center justify-center overflow-hidden cursor-pointer"
-                >
-                  <img src={thumbnail} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+              <div key={product.id} className="group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden flex flex-col">
+                <div className="relative">
+                  <div 
+                    onClick={() => router.push(`/client/product/${product.id}`)}
+                    className="relative bg-pink-100 p-8 h-64 flex items-center justify-center overflow-hidden cursor-pointer"
+                  >
+                    <img src={thumbnail} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                  </div>
+                  <button 
+                    onClick={() => handleWishlistToggle(product)}
+                    className="absolute top-4 right-4 bg-white/80 backdrop-blur-sm rounded-full p-2 hover:bg-white transition-colors"
+                  >
+                    <Heart className={`w-6 h-6 ${product.isWishlisted ? 'text-pink-500 fill-current' : 'text-gray-500'}`} />
+                  </button>
                 </div>
-                <div className="p-6">
-                  <h3 className="font-bold text-lg text-gray-800 mb-2">{product.name}</h3>
-                  <div className="flex items-center gap-2 mb-4">
+                <div className="p-6 flex flex-col flex-grow">
+                  <h3 className="font-bold text-lg text-gray-800 mb-2 h-14 overflow-hidden text-ellipsis line-clamp-2">{product.name}</h3>
+                  <div className="flex items-center gap-2 mb-4 mt-auto">
                     <span className="text-2xl font-bold text-pink-500">${Number(product.price).toFixed(2)}</span>
                   </div>
                   <button 

@@ -2,7 +2,6 @@
 
 import React from "react";
 import { Trash2, Plus, Minus } from "lucide-react";
-import Image from "next/image";
 
 export type CartItem = {
   id: number;
@@ -10,7 +9,7 @@ export type CartItem = {
   name: string;
   price: number;
   quantity: number;
-  image?: string;
+  images?: { url: string; isMain: boolean }[];
   stockQuantity?: number;
 };
 type CartProductCardProps = {
@@ -21,19 +20,17 @@ type CartProductCardProps = {
 
 const CartProductCard = ({ item, onQuantityChange, onDelete }: CartProductCardProps) => {
   const totalPrice = Number(item.price) * item.quantity;
+  const mainImage = item.images?.find(img => img.isMain)?.url;
 
   return (
     <div className="group flex items-center gap-6 p-5 rounded-3xl bg-gradient-to-r from-white to-pink-50 hover:from-pink-50 hover:to-rose-50 shadow-md hover:shadow-xl border border-pink-100/50 transition-all duration-300 hover:-translate-y-1">
       {/* Image */}
       <div className="w-32 h-32 bg-gradient-to-br from-pink-200 via-yellow-100 to-blue-100 rounded-2xl flex-shrink-0 shadow-md group-hover:shadow-lg transition-all overflow-hidden flex items-center justify-center">
-        {item.image ? (
-          <Image
-            src={item.image}
+        {mainImage ? (
+          <img
+            src={mainImage}
             alt={item.name}
-            width={128}
-            height={128}
             className="w-full h-full object-cover object-center"
-            priority={false}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">

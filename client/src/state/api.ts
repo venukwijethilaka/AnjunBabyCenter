@@ -534,7 +534,7 @@ export const {
   useGetCategoriesQuery,
   //Cart 
   useAddToCartMutation,
-  useGetCartQuery
+  useGetCartQuery,
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,

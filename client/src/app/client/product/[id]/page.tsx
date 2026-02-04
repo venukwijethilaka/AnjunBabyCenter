@@ -242,87 +242,91 @@ function ProductDetailPageContent({ id }: ProductDetailPageContentProps) {
           </div>
 
           {/* RIGHT COLUMN: Info */}
-          <div className="flex flex-col py-2">
-            <div className="mb-8">
-              <span className="inline-block px-3 py-1 bg-pink-100 text-pink-600 rounded-full text-xs font-bold uppercase tracking-widest mb-4">
-                {product.category?.name || 'Category'}
-              </span>
-              <h1 className="text-5xl font-extrabold text-gray-900 leading-tight mb-4">
-                {product.name}
-              </h1>
-              <div className="flex items-center gap-4">
-                <span className="text-4xl font-bold text-pink-500">
-                  ${Number(product.price).toFixed(2)}
+          <div className="relative flex flex-col h-full">
+            <div className="flex-grow overflow-y-auto pb-24">
+              <div className="mb-8">
+                <span className="inline-block px-3 py-1 bg-pink-100 text-pink-600 rounded-full text-xs font-bold uppercase tracking-widest mb-4">
+                  {product.category?.name || 'Category'}
                 </span>
-                {(product.discountPercentage ?? 0) > 0 && (
-                  <span className="bg-rose-100 text-rose-600 px-3 py-1 rounded-lg text-sm font-bold">
-                    Save {product.discountPercentage}%
+                <h1 className="text-5xl font-extrabold text-gray-900 leading-tight mb-4">
+                  {product.name}
+                </h1>
+                <div className="flex items-center gap-4">
+                  <span className="text-4xl font-bold text-pink-500">
+                    ${Number(product.price).toFixed(2)}
                   </span>
-                )}
-              </div>
-            </div>
-
-            <div className="border-t border-gray-100 pt-8 mb-8">
-              <p className="text-gray-600 leading-relaxed text-lg">
-                {product.description}
-              </p>
-            </div>
-
-            {/* Quantity Selector */}
-            <div className="flex flex-col gap-4 mb-10">
-              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Quantity</h3>
-              <div className="flex items-center gap-6">
-                <div className="flex items-center bg-white border border-gray-200 rounded-2xl p-1 shadow-sm">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-pink-50 text-gray-600 transition-colors"
-                  >
-                    −
-                  </button>
-                  <span className="font-bold text-xl w-12 text-center text-gray-800">{quantity}</span>
-                  <button
-                    onClick={() => setQuantity(Math.min(product.quantity ?? 1, quantity + 1))}
-                    className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-pink-50 text-gray-600 transition-colors"
-                  >
-                    +
-                  </button>
+                  {(product.discountPercentage ?? 0) > 0 && (
+                    <span className="bg-rose-100 text-rose-600 px-3 py-1 rounded-lg text-sm font-bold">
+                      Save {product.discountPercentage}%
+                    </span>
+                  )}
                 </div>
-                <span className="text-sm font-medium text-gray-400 italic">
-                   {product.quantity} units available
-                </span>
+              </div>
+
+              <div className="border-t border-gray-100 pt-8 mb-8">
+                <p className="text-gray-600 leading-relaxed text-lg">
+                  {product.description}
+                </p>
+              </div>
+
+              {/* Quantity Selector */}
+              <div className="flex flex-col gap-4 mb-10">
+                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Quantity</h3>
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center bg-white border border-gray-200 rounded-2xl p-1 shadow-sm">
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-pink-50 text-gray-600 transition-colors"
+                    >
+                      −
+                    </button>
+                    <span className="font-bold text-xl w-12 text-center text-gray-800">{quantity}</span>
+                    <button
+                      onClick={() => setQuantity(Math.min(product.quantity ?? 1, quantity + 1))}
+                      className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-pink-50 text-gray-600 transition-colors"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <span className="text-sm font-medium text-gray-400 italic">
+                    {product.quantity} units available
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Primary Actions */}
-            <div className="flex gap-4">
-              <button
-                onClick={handleAddToBag}
-                disabled={!product.availability || product.quantity === 0 || isAddingToCart}
-                className="flex-[4] bg-linear-to-r from-pink-500 to-rose-500 text-white py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-lg shadow-pink-200 hover:shadow-pink-300 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:translate-y-0"
-              >
-                {isAddingToCart ? (
-                  <>
-                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Adding...
-                  </>
-                ) : (
-                  <>
-                    <ShoppingCart className="w-6 h-6" />
-                    {product.quantity === 0 ? 'Out of Stock' : 'Add to Bag'}
-                  </>
-                )}
-              </button>
+            {/* Primary Actions - Fixed Footer */}
+            <div className="absolute bottom-0 left-0 right-0 bg-white/70 backdrop-blur-sm p-6 border-t border-gray-100">
+              <div className="flex gap-4">
+                <button
+                  onClick={handleAddToBag}
+                  disabled={!product.availability || product.quantity === 0 || isAddingToCart}
+                  className="flex-[4] bg-linear-to-r from-pink-500 to-rose-500 text-white py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-lg shadow-pink-200 hover:shadow-pink-300 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:translate-y-0"
+                >
+                  {isAddingToCart ? (
+                    <>
+                      <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Adding...
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="w-6 h-6" />
+                      {product.quantity === 0 ? 'Out of Stock' : 'Add to Bag'}
+                    </>
+                  )}
+                </button>
 
-              <button
-                onClick={handleWishlistToggle}
-                className="flex-1 bg-white border border-gray-200 rounded-2xl flex items-center justify-center hover:bg-pink-50 transition-all active:scale-95"
-              >
-                <Heart
-                  className={`w-7 h-7 transition-colors ${
-                    isWishlisted ? 'fill-pink-500 text-pink-500' : 'text-gray-300'
-                  }`}
-                />
-              </button>
+                <button
+                  onClick={handleWishlistToggle}
+                  className="flex-1 bg-white border border-gray-200 rounded-2xl flex items-center justify-center hover:bg-pink-50 transition-all active:scale-95"
+                >
+                  <Heart
+                    className={`w-7 h-7 transition-colors ${
+                      isWishlisted ? 'fill-pink-500 text-pink-500' : 'text-gray-300'
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
           </div>
           

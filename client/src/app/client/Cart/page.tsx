@@ -3,10 +3,12 @@
 import React, { useState, useEffect } from "react";
 import { ShoppingCart } from "lucide-react";
 import CartProductCard, { CartItem } from "./productCard";
+import { useRouter } from "next/navigation";
 
 type Props = {};
 
 const page = (props: Props) => {
+  const router = useRouter();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -32,15 +34,13 @@ const page = (props: Props) => {
         const data = await response.json();
         // Transform API response to CartItem format
         const items = data.items?.map((item: any) => {
-          // Get image from product images array
-          const productImage = item.product?.images?.[0]?.url || '/images/placeholder.jpg';
           return {
             id: item.productId,
             cartItemId: item.id,
             name: item.product?.name || 'Product',
             price: Number(item.product?.price) || 0,
             quantity: item.quantity,
-            image: productImage,
+            images: item.product?.images || [],
           };
         }) || [];
         setCartItems(items);
@@ -59,7 +59,7 @@ const page = (props: Props) => {
     // Poll cart every 1 second for instant updates
     const pollInterval = setInterval(() => {
       fetchCart();
-    }, 1000);
+    }, 30000);
 
     // Also listen for cartUpdated event
     const handleCartUpdate = () => {
@@ -179,9 +179,12 @@ const page = (props: Props) => {
 
       {/* Overlay + Sidebar Cart */}
       <main className="fixed inset-0 z-10 flex justify-end p-4 sm:p-8">
-        <div className="absolute inset-0 bg-black/25 backdrop-blur-sm" />
+        <div 
+          className="absolute inset-0 bg-black/25"
+          onClick={() => router.back()}
+        />
 
-        <aside className="relative z-10 w-full max-w-2xl bg-white/85 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-white/60">
+        <aside className="relative z-10 w-full max-w-2xl bg-white/85 rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-white/60">
           {/* Sidebar Header */}
           <div className="bg-gradient-to-r from-pink-400 via-pink-500 to-rose-400 px-6 py-6 border-b border-pink-200">
             <div className="flex items-center justify-between">
@@ -189,9 +192,20 @@ const page = (props: Props) => {
                 <p className="text-xs uppercase tracking-widest text-white/80 font-semibold mb-2">Anjun Baby Center</p>
                 <h2 className="text-3xl font-bold text-white">Your Cart</h2>
               </div>
-              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white font-semibold">
-                <ShoppingCart className="w-5 h-5" />
-                <span>{cartItems.length}</span>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-white font-semibold">
+                  <ShoppingCart className="w-5 h-5" />
+                  <span>{cartItems.length}</span>
+                </div>
+                <button 
+                  onClick={() => router.back()}
+                  className="w-12 h-12 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors"
+                  aria-label="Close cart"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
