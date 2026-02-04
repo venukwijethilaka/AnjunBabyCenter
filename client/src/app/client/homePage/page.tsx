@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useAppSelector } from "@/app/redux";
-import { User, ShoppingCart, Heart, Home } from 'lucide-react';
+import { User, ShoppingCart, Heart, Home, ToggleRightIcon } from 'lucide-react';
 
 export default function SimpleHomePage() {
   const { user } = useAppSelector((state) => state.auth);
@@ -57,6 +57,18 @@ export default function SimpleHomePage() {
             </div>
           </Link>
 
+          
+          {/* Category Link (Future) */}
+          <Link href="/client/category">
+            <div className="bg-white p-6 rounded-3xl border border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all group cursor-pointer text-center">
+              <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-100 transition-colors">
+                <ToggleRightIcon className="text-gray-600 group-hover:text-blue-600" />
+              </div>
+              <h3 className="font-bold text-gray-900">View Category</h3>
+              <p className="text-xs text-gray-400 mt-1">Browse all baby products</p>
+            </div>
+          </Link>
+
           {/* Wishlist Link (Future) */}
           <div className="bg-white p-6 rounded-3xl border border-gray-200 opacity-60 text-center">
             <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -65,6 +77,9 @@ export default function SimpleHomePage() {
             <h3 className="font-bold text-gray-400">Favorites</h3>
             <p className="text-xs text-gray-400 mt-1">Coming Soon</p>
           </div>
+          
+
+          
 
         </div>
 

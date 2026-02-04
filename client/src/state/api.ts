@@ -58,6 +58,7 @@ export interface Category {
   isActive: boolean;
   parentId?: number | null;
   parent?: Category | null;
+  imageUrl?: string;
   children?: Category[];
   products?: Product[];
   createdAt: Date;
@@ -169,6 +170,15 @@ export interface CreateProductInput {
 }
 
 export interface UpdateProductInput extends Partial<CreateProductInput> {}
+
+export interface CreateCategoryInput {
+  name: string;
+  parentId?: number | null;
+  imageUrl?: string;
+}
+
+export interface UpdateCategoryInput extends Partial<CreateCategoryInput> {}
+
 
 // --- AUTH INTERFACES ---
 
@@ -430,6 +440,31 @@ export const api = createApi({
             providesTags: ["Categories"],
             keepUnusedDataFor: 300,
         }),
+      createCategory: build.mutation<Category, CreateCategoryInput>({
+        query: (category) => ({
+          url: "/categories",
+          method: "POST",
+          body: category,
+        }),
+        transformResponse: (response: ApiResponse<Category>) => response.data,
+        invalidatesTags: ["Categories"],
+      }),
+      updateCategory: build.mutation<Category, { id: number, data: UpdateCategoryInput }>({
+        query: ({ id, data }) => ({
+          url: `/categories/${id}`,
+          method: "PUT",
+          body: data,
+        }),
+        transformResponse: (response: ApiResponse<Category>) => response.data,
+        invalidatesTags: ["Categories"],
+      }),
+      deleteCategory: build.mutation<void, number>({
+        query: (id) => ({
+          url: `/categories/${id}`,
+          method: "DELETE",
+        }),
+        invalidatesTags: ["Categories"],
+      }),
       
       // --- PASSWORD RECOVERY ---
       forgotPassword: build.mutation<{ message: string }, { email: string }>({
@@ -500,4 +535,7 @@ export const {
   //Cart 
   useAddToCartMutation,
   useGetCartQuery
+  useCreateCategoryMutation,
+  useUpdateCategoryMutation,
+  useDeleteCategoryMutation,
 } = api;
