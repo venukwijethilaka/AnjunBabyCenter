@@ -52,7 +52,7 @@ model Category {
   parentId  Int?
   createdAt DateTime   @default(now())
   imageUrl  String?
-  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children  Category[] @relation("CategoryHierarchy")
   products  Product[]
 }
