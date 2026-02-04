@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import * as cateoryServices from "../services/category.service"
 
+
 export const createCategory = async (req: Request, res: Response) => {
     try{
         const category = await cateoryServices.createCategory(req.body);

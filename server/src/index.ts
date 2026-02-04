@@ -4,7 +4,7 @@ import bodyParser from "body-parser";
 import morgan from "morgan";
 import helmet from "helmet";
 import dotenv from "dotenv";
-
+//imports
 import userRoutes from './routes/user.route';
 import productRoutes from './routes/product.route'; 
 import categoryRoutes from './routes/category.route';
@@ -32,6 +32,7 @@ app.use("/products", productRoutes);
 app.use("/categories", categoryRoutes);
 app.use("/users", userRoutes);
 app.use("/imagekit", imagekitRoutes);
+
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

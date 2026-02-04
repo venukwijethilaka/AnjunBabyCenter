@@ -77,6 +77,7 @@ export default function SimpleHomePage() {
             <h3 className="font-bold text-gray-400">Favorites</h3>
             <p className="text-xs text-gray-400 mt-1">Coming Soon</p>
           </div>
+          
 
           
 
