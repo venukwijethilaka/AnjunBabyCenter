@@ -3,17 +3,20 @@
 import { useState, useMemo } from 'react';
 import { Heart, ShoppingCart, Filter, Search } from 'lucide-react'; // Added Search icon
 import { useRouter } from 'next/navigation';
-import { useGetProductsQuery, useGetCategoriesQuery, Product } from '@/state/api';
+import { useGetProductsQuery, useGetCategoriesQuery, Product, useAddToCartMutation } from '@/state/api';
 
 export default function BabyProductsContent() {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('featured');
   const [searchQuery, setSearchQuery] = useState('');
+  const [addingToCart, setAddingToCart] = useState<number | null>(null);
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // 1. FETCH DATA FROM BACKEND
   const { data: products = [], isLoading: productsLoading, error: productsError } = useGetProductsQuery();
   const { data: rawCategories = [], isLoading: categoriesLoading } = useGetCategoriesQuery();
+  const [addToCartMutation] = useAddToCartMutation();
 
   // 2. PROCESS CATEGORIES (Main categories only + "All")
   const displayCategories = useMemo(() => {
@@ -69,12 +72,94 @@ export default function BabyProductsContent() {
       });
   }, [products, selectedCategory, searchQuery, sortBy, rawCategories]); // Dependencies look good
 
+  // Handle Add to Cart
+  const handleAddToCart = async (product: Product) => {
+    try {
+      // Get user from localStorage or sessionStorage
+      const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+      if (!userStr) {
+        setNotification({ message: 'Please log in to add items to cart', type: 'error' });
+        router.push('/client/sign-in');
+        return;
+      }
+
+      const user = JSON.parse(userStr);
+      setAddingToCart(product.id);
+
+      console.log('🔵 Step 1: User data:', { userId: user.id, productId: product.id });
+
+      // Call add to cart mutation
+      console.log('🔵 Step 2: Calling mutation...');
+      const result = addToCartMutation({
+        userId: user.id,
+        productId: product.id,
+      });
+      
+      console.log('🔵 Step 3: Mutation promise created');
+      
+      const response = await result.unwrap();
+      
+      console.log('🟢 Step 4: Success! Response:', response);
+
+      setNotification({ 
+        message: `${product.name} added to cart!`, 
+        type: 'success' 
+      });
+
+      window.dispatchEvent(new Event('cartUpdated'));
+      localStorage.setItem('cartUpdated', Date.now().toString());
+
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error: any) {
+      console.error('🔴 ERROR CAUGHT');
+      console.error('Error:', error);
+      console.error('Error?.status:', error?.status);
+      console.error('Error?.data:', error?.data);
+      console.error('Error?.message:', error?.message);
+      
+      let errorMessage = 'Failed to add item to cart';
+      
+      if (error?.status === 'FETCH_ERROR') {
+        errorMessage = 'Cannot connect to server - is it running?';
+      } else if (error?.data?.message) {
+        errorMessage = error.data.message;
+      } else if (error?.data?.error) {
+        errorMessage = error.data.error;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      console.error('🔴 Final error message:', errorMessage);
+      
+      setNotification({ 
+        message: errorMessage, 
+        type: 'error' 
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setAddingToCart(null);
+    }
+  };
+
   // Loading/Error States
   if (productsLoading) return <div className="flex justify-center items-center min-h-screen">Loading sweet things...</div>;
   if (productsError) return <div className="text-center py-20 text-red-500">Failed to load products.</div>;
 
   return (
     <div className="min-h-screen bg-linear-to-br from-pink-50 via-yellow-50 to-blue-50">
+      {/* Notification Toast */}
+      {notification && (
+        <div className={`fixed top-6 right-6 px-6 py-4 rounded-xl shadow-lg z-50 transition-all duration-300 ${
+          notification.type === 'success' 
+            ? 'bg-green-500 text-white' 
+            : 'bg-red-500 text-white'
+        }`}>
+          {notification.message}
+        </div>
+      )}
+
       <main className="relative z-10 max-w-7xl mx-auto px-6 py-8">
         
         {/* Search Bar (Missing from your previous snippet but used in logic) */}
@@ -157,8 +242,22 @@ export default function BabyProductsContent() {
                   <div className="flex items-center gap-2 mb-4">
                     <span className="text-2xl font-bold text-pink-500">${Number(product.price).toFixed(2)}</span>
                   </div>
-                  <button className="w-full bg-linear-to-r from-pink-400 to-rose-400 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all">
-                    Add to Cart
+                  <button 
+                    onClick={() => handleAddToCart(product)}
+                    disabled={addingToCart === product.id}
+                    className="w-full bg-linear-to-r from-pink-400 to-rose-400 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {addingToCart === product.id ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Adding...
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingCart className="w-5 h-5" />
+                        Add to Cart
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
