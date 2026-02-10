@@ -7,12 +7,13 @@ type cardItems = {
   onEdit: (product: Product) => void;
   onDelete: (product: Product) => void;
 }
-const productCard = ({ product, onEdit, onDelete }: cardItems) => {
+
+const ProductCard = ({ product, onEdit, onDelete }: cardItems) => {
   const mainImage = product.images?.find((img: any) => img.isMain)?.url || product.images?.[0]?.url || '/placeholder.svg';
   
   return (
-    <div className="relative"> {/* Added relative for watermark positioning */}
-      <div className={`rounded-lg p-4 shadow-md bg-white hover:shadow-lg transition-all duration-300 
+    <div className="relative">
+      <div className={`rounded-md p-4 shadow-md bg-white hover:shadow-xl transition-all duration-300 border border-pink-100/50
         ${!product.availability ? 'opacity-60 grayscale-[0.5] border-2 border-dashed border-gray-300' : ''}`}>
         
         {/* Watermark for Hidden Products */}
@@ -27,30 +28,39 @@ const productCard = ({ product, onEdit, onDelete }: cardItems) => {
         <img 
           src={mainImage} 
           alt={product.name} 
-          className="w-full h-48 object-cover rounded" 
+          className="w-full h-48 object-cover rounded-md" 
         />
-        <h3 className="font-bold mt-2">{product.name}</h3>
-        <p className="text-gray-600">${product.price}</p>
+        <h3 className="font-bold mt-2 text-gray-800">{product.name}</h3>
+        <p className="text-pink-600 font-semibold">${product.price}</p>
         
         {/* Availability Badge */}
         <div className="mt-1">
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${product.availability ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-500'}`}>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+            product.availability 
+              ? 'bg-green-100 text-green-600' 
+              : 'bg-gray-200 text-gray-500'
+          }`}>
             {product.availability ? 'Active' : 'Draft / Hidden'}
           </span>
         </div>
 
         <div className="flex gap-2 mt-4">
-           {/* Your existing edit/delete buttons */}
-           <button onClick={() => onEdit(product)} className="flex-1 flex items-center justify-center gap-1 p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium">
-             <Edit size={16} /> Edit
-           </button>
-           <button onClick={() => onDelete(product)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-             <Trash2 size={18} />
-           </button>
+          <button 
+            onClick={() => onEdit(product)} 
+            className="flex-1 flex items-center justify-center gap-1 p-2 bg-white text-pink-700 border-pink-200 hover:bg-pink-100/60 hover:text-pink-900  rounded-md transition-colors text-sm font-medium shadow-sm"
+          >
+            <Edit size={16} /> Edit
+          </button>
+          <button 
+            onClick={() => onDelete(product)} 
+            className="p-2 text-rose-500 hover:bg-rose-50 rounded-md transition-colors shadow-sm"
+          >
+            <Trash2 size={18} />
+          </button>
         </div>
       </div>
     </div>
   )
 }
 
-export default productCard
+export default ProductCard

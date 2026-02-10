@@ -112,7 +112,7 @@ export const registerUser = async (name: string, email: string, password: string
     }
 
     console.log(`(Dev Log) OTP for ${email}: ${otp}`); 
-    await sendEmail(email, "Your Verification Code", `Your OTP code is: ${otp}`);
+    await sendEmail(email, "Anjun Baby Center", `Your OTP code is: ${otp}`);
     return otp; 
 };
 

@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { setCredentials, logout } from "./authSlice"; 
 
+
 // --- ENUMS & INTERFACES ---
 
 export enum Role {
@@ -120,14 +121,12 @@ export interface CartItem {
   product?: Product;
 }
 
-export interface Order {
-  id: number;
-  userId: number;
-  totalAmount: number;
-  status: string;
-  user?: User;
-  items?: OrderItem[];
-  createdAt: Date;
+export interface ShippingAddress {
+  street: string;
+  city: string;
+  postalCode: string;
+  country: string;
+  phone: string;
 }
 
 export interface OrderItem {
@@ -135,20 +134,81 @@ export interface OrderItem {
   orderId: number;
   productId: number;
   quantity: number;
-  price: number;
-  order?: Order;
-  product?: Product;
+  price: string;
+  product: {
+    id: number;
+    name: string;
+    images: { url: string; isMain: boolean }[];
+  };
+}
+
+export interface Order {
+  id: number;
+  userId: number;
+  totalAmount: string;
+  status: 'PENDING' | 'ARRANGING' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED';
+  createdAt: string;
+  updatedAt: string;
+  address: ShippingAddress;
+  trackingId?: string;
+  items: OrderItem[];
+  user?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+}
+export interface CreateOrderRequest {
+  userId: number;
+  address: ShippingAddress;
+  items: {
+    productId: number;
+    quantity: number;
+    price: number;
+  }[];
+  totalAmount: number;
+}
+
+export interface UpdateOrderStatusRequest {
+  orderId: number;
+  status: string;
+  trackingId?: string;
 }
 
 export interface Banner {
   id: number;
-  title?: string | null;
+  title?: string;
   imageUrl: string;
+  mobileImageUrl?: string;
+  bannerPosition: 'HERO' | 'SECONDARY' | 'PROMOTIONAL' | 'FOOTER';
+  isSlider: boolean;
+  displayOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  link?: string;
+}
+
+export interface CreateBannerRequest {
+  title?: string;
+  imageUrl: string;
+  mobileImageUrl?: string;
   bannerPosition: string;
   isSlider: boolean;
   displayOrder: number;
   isActive: boolean;
-  createdAt: Date;
+  link?: string;
+}
+
+export interface UpdateBannerRequest {
+  id: number;
+  title?: string;
+  imageUrl?: string;
+  mobileImageUrl?: string;
+  bannerPosition?: string;
+  isSlider?: boolean;
+  displayOrder?: number;
+  isActive?: boolean;
+  link?: string;
 }
 
 // --- INPUT INTERFACES ---
@@ -225,6 +285,7 @@ export interface ApiResponse<T> {
 }
 
 
+
 // --- API DEFINITION WITH REFRESH TOKEN LOGIC ---
 
 const baseQuery = fetchBaseQuery({ 
@@ -278,7 +339,7 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
 export const api = createApi({
   baseQuery: baseQueryWithReauth, 
   reducerPath: "api",
-  tagTypes: ["Products", "User", "Loyalty","Categories"], // ✅ Added Loyalty Tag
+  tagTypes: ["Products", "User", "Loyalty","Categories","Cart",'Order', 'UserOrders','Banner', 'ActiveBanners'], // ✅ Added Loyalty Tag
   endpoints: (build) => ({
       
       // --- AUTH ENDPOINTS ---
@@ -490,13 +551,26 @@ export const api = createApi({
       }),
 
       // --- CART  ---
-      addToCart: build.mutation<CartItem, { userId: number; productId: number }>({
-          query: (data) => ({
-              url: "/cart",
-              method: "POST",
-              body: data,
+      // Replace your existing addToCart with this:
+        addToCart: build.mutation<CartItem, { userId: number; productId: number; quantity: number }>({
+            query: (data: { userId: number; productId: number; quantity: number }) => ({
+                url: "/cart",
+                method: "POST",
+                body: data,
+            }),
+            invalidatesTags: ['Cart'],
+        }),
+
+      // Delete cart item mutation
+      deleteCartItem: build.mutation<{ success: boolean }, { cartItemId: number }>(
+        {
+          query: (data: { cartItemId: number }) => ({
+            url: `/cart/${data.cartItemId}`,
+            method: "DELETE",
           }),
-      }),
+          invalidatesTags: ['Cart'],
+        }
+      ),
 
       getCart: build.query<Cart, number>({
           query: (userId) => ({
@@ -504,6 +578,134 @@ export const api = createApi({
               method: "GET",
           }),
       }),
+
+      //order management
+      createOrder: build.mutation<Order, CreateOrderRequest>({
+            query: (orderData) => ({
+              url: '/orders',
+              method: 'POST',
+              body: orderData,
+            }),
+            invalidatesTags: ['UserOrders'],
+          }),
+      
+          // Get user's orders
+          getUserOrders: build.query<Order[], number>({
+            query: (userId) => `/orders/user/${userId}`,
+            providesTags: ['UserOrders'],
+          }),
+      
+          // Get single order details
+          getOrderById: build.query<Order, number>({
+            query: (orderId) => `/orders/${orderId}`,
+            providesTags: (_result, _error, orderId) => [{ type: 'Order', id: orderId }],
+          }),
+      
+          // Get all orders (admin)
+          getAllOrders: build.query<Order[], void>({
+            query: () => '/orders',
+            providesTags: ['Order'],
+          }),
+      
+          // Update order status (admin)
+          updateOrderStatus: build.mutation<Order, UpdateOrderStatusRequest>({
+            query: ({ orderId, ...body }) => ({
+              url: `/orders/${orderId}/status`,
+              method: 'PATCH',
+              body,
+            }),
+            invalidatesTags: (_result, _error, { orderId }) => [
+              { type: 'Order', id: orderId },
+              'UserOrders',
+              'Order',
+            ],
+          }),
+      
+          // Cancel order (customer - before shipping)
+          cancelOrder: build.mutation<Order, number>({
+            query: (orderId) => ({
+              url: `/orders/${orderId}/cancel`,
+              method: 'POST',
+            }),
+            invalidatesTags: (_result, _error, orderId) => [
+              { type: 'Order', id: orderId },
+              'UserOrders',
+            ],
+          }),
+      
+          // Update tracking ID (admin)
+          updateTrackingId: build.mutation<Order, { orderId: number; trackingId: string }>({
+            query: ({ orderId, trackingId }) => ({
+              url: `/orders/${orderId}/tracking`,
+              method: 'PATCH',
+              body: { trackingId },
+            }),
+            invalidatesTags: (_result, _error, { orderId }) => [
+              { type: 'Order', id: orderId },
+              'UserOrders',
+            ],
+          }),
+
+
+          //homepage 
+           getAllBanners: build.query<Banner[], void>({
+      query: () => '/banners',
+      providesTags: ['Banner'],
+    }),
+
+    getActiveBanners: build.query<Banner[], string | void>({
+      query: (position) => position ? `/banners/active?position=${position}` : '/banners/active',
+      providesTags: ['ActiveBanners'],
+    }),
+
+    getBannerById: build.query<Banner, number>({
+      query: (id) => `/banners/${id}`,
+      providesTags: (_result, _error, id) => [{ type: 'Banner', id }],
+    }),
+
+    createBanner: build.mutation<Banner, CreateBannerRequest>({
+      query: (bannerData) => ({
+        url: '/banners',
+        method: 'POST',
+        body: bannerData,
+      }),
+      invalidatesTags: ['Banner', 'ActiveBanners'],
+    }),
+
+    updateBanner: build.mutation<Banner, UpdateBannerRequest>({
+      query: ({ id, ...data }) => ({
+        url: `/banners/${id}`,
+        method: 'PATCH',
+        body: data,
+      }),
+      invalidatesTags: ['Banner', 'ActiveBanners'],
+    }),
+
+    deleteBanner: build.mutation<void, number>({
+      query: (id) => ({
+        url: `/banners/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Banner', 'ActiveBanners'],
+    }),
+
+    toggleBannerStatus: build.mutation<Banner, number>({
+      query: (id) => ({
+        url: `/banners/${id}/toggle`,
+        method: 'PATCH',
+      }),
+      invalidatesTags: ['Banner', 'ActiveBanners'],
+    }),
+
+    // --- ImageKit Auth ---
+    // Note: Updated path to match the route we created in the previous step
+    getImageKitAuth: build.query<{
+      token: string;
+      expire: number;
+      signature: string;
+    }, void>({
+      query: () => '/banners/imagekit/auth', 
+    }),
   })
 });
 
@@ -534,8 +736,27 @@ export const {
   useGetCategoriesQuery,
   //Cart 
   useAddToCartMutation,
+  useDeleteCartItemMutation,
   useGetCartQuery,
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,
+  //order management
+  useCreateOrderMutation,
+  useGetUserOrdersQuery,
+  useGetOrderByIdQuery,
+  useGetAllOrdersQuery,
+  useUpdateOrderStatusMutation,
+  useCancelOrderMutation,
+  useUpdateTrackingIdMutation,
+  //homepage
+    //homepage
+ useGetAllBannersQuery,
+  useGetActiveBannersQuery,
+  useGetBannerByIdQuery,
+  useCreateBannerMutation,
+  useUpdateBannerMutation,
+  useDeleteBannerMutation,
+  useToggleBannerStatusMutation,
+  useGetImageKitAuthQuery
 } = api;

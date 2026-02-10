@@ -121,6 +121,8 @@ model Order {
   userId      Int
   totalAmount Decimal     @db.Decimal(10, 2)
   status      String
+  address     Json        // Stores: { street, city, postalCode, country, phone }
+  trackingId  String?     // Domex tracking ID for shipping status
   createdAt   DateTime    @default(now())
   user        User        @relation(fields: [userId], references: [id])
   items       OrderItem[]
@@ -139,11 +141,13 @@ model OrderItem {
 model Banner {
   id             Int      @id @default(autoincrement())
   title          String?
-  imageUrl       String
-  bannerPosition String
+  imageUrl       String   // Desktop/default image URL (ImageKit)
+  mobileImageUrl String?  // Separate mobile image URL (ImageKit)
+  bannerPosition String   // HERO, SECONDARY, PROMOTIONAL, FOOTER
   isSlider       Boolean  @default(false)
   displayOrder   Int
   isActive       Boolean  @default(true)
+  link           String?  // Optional navigation link
   createdAt      DateTime @default(now())
 }
 

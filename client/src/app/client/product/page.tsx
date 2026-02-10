@@ -2,12 +2,16 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Heart, ShoppingCart, Filter, Search } from 'lucide-react'; // Added Search icon
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useGetProductsQuery, useGetCategoriesQuery, Product, useAddToCartMutation } from '@/state/api';
+import ProtectedRoute from '../(components)/ProtectedRoute';
+import Navbar from '../(components)/NavBar';
 
 export default function BabyProductsContent() {
   const router = useRouter();
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const searchParams = useSearchParams();
+  const initialCategory = searchParams.get('category') || 'all';
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [sortBy, setSortBy] = useState('featured');
   const [searchQuery, setSearchQuery] = useState('');
   const [addingToCart, setAddingToCart] = useState<number | null>(null);
@@ -34,6 +38,12 @@ export default function BabyProductsContent() {
     };
     fetchWishlist();
   }, []);
+
+  // Update selectedCategory if query param changes
+  useEffect(() => {
+    const categoryFromQuery = searchParams.get('category') || 'all';
+    setSelectedCategory(categoryFromQuery);
+  }, [searchParams]);
 
   // 2. PROCESS CATEGORIES (Main categories only + "All")
   const displayCategories = useMemo(() => {
@@ -96,9 +106,9 @@ export default function BabyProductsContent() {
   }, [filteredProducts, wishlistedProducts]);
 
   // Handle Add to Cart
+  // --- Updated handleAddToCart ---
   const handleAddToCart = async (product: Product) => {
     try {
-      // Get user from localStorage or sessionStorage
       const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
       if (!userStr) {
         setNotification({ message: 'Please log in to add items to cart', type: 'error' });
@@ -107,23 +117,18 @@ export default function BabyProductsContent() {
       }
 
       const user = JSON.parse(userStr);
+      const userId = Number(user.id); // Ensure it's a number
       setAddingToCart(product.id);
 
-      console.log('🔵 Step 1: User data:', { userId: user.id, productId: product.id });
-
-      // Call add to cart mutation
-      console.log('🔵 Step 2: Calling mutation...');
+      // ✅ Now passing quantity: 1 to satisfy the Redux API requirement
       const result = addToCartMutation({
-        userId: user.id,
+        userId: userId,
         productId: product.id,
+        quantity: 1, 
       });
-      
-      console.log('🔵 Step 3: Mutation promise created');
       
       const response = await result.unwrap();
       
-      console.log('🟢 Step 4: Success! Response:', response);
-
       setNotification({ 
         message: `${product.name} added to cart!`, 
         type: 'success' 
@@ -134,32 +139,8 @@ export default function BabyProductsContent() {
 
       setTimeout(() => setNotification(null), 3000);
     } catch (error: any) {
-      console.error('🔴 ERROR CAUGHT');
-      console.error('Error:', error);
-      console.error('Error?.status:', error?.status);
-      console.error('Error?.data:', error?.data);
-      console.error('Error?.message:', error?.message);
-      
-      let errorMessage = 'Failed to add item to cart';
-      
-      if (error?.status === 'FETCH_ERROR') {
-        errorMessage = 'Cannot connect to server - is it running?';
-      } else if (error?.data?.message) {
-        errorMessage = error.data.message;
-      } else if (error?.data?.error) {
-        errorMessage = error.data.error;
-      } else if (error?.message) {
-        errorMessage = error.message;
-      } else if (typeof error === 'string') {
-        errorMessage = error;
-      }
-      
-      console.error('🔴 Final error message:', errorMessage);
-      
-      setNotification({ 
-        message: errorMessage, 
-        type: 'error' 
-      });
+      let errorMessage = error?.data?.message || error?.message || 'Failed to add item to cart';
+      setNotification({ message: errorMessage, type: 'error' });
       setTimeout(() => setNotification(null), 3000);
     } finally {
       setAddingToCart(null);
@@ -213,7 +194,7 @@ export default function BabyProductsContent() {
 
         if (response.ok) {
           setNotification({ 
-            message: '❤️ Added to wishlist!', 
+            message: 'Added to wishlist!', 
             type: 'success' 
           });
           window.dispatchEvent(new Event('wishlistUpdated'));
@@ -232,56 +213,59 @@ export default function BabyProductsContent() {
   };
 
   // Loading/Error States
-  if (productsLoading) return <div className="flex justify-center items-center min-h-screen">Loading sweet things...</div>;
-  if (productsError) return <div className="text-center py-20 text-red-500">Failed to load products.</div>;
+  if (productsLoading) return <div className="flex justify-center items-center min-h-screen bg-white text-pink-500 font-semibold text-lg">Loading sweet things...</div>;
+  if (productsError) return <div className="text-center py-20 text-rose-500 font-extrabold bg-white text-lg">Failed to load products.</div>;
 
-  return (
-    <div className="min-h-screen bg-linear-to-br from-pink-50 via-yellow-50 to-blue-50">
+  return ( 
+    
+    <div className="min-h-screen bg-white">
+      <Navbar />
+      <div className="mt-[70px]">
+      {/* bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100 */}
       {/* Notification Toast */}
       {notification && (
-        <div className={`fixed top-6 right-6 px-6 py-4 rounded-xl shadow-lg z-50 transition-all duration-300 ${
+        <div className={`fixed top-6 right-6 px-6 py-4 border shadow-lg z-50 transition-all duration-200 font-semibold text-base tracking-wide ${
           notification.type === 'success' 
-            ? 'bg-green-500 text-white' 
-            : 'bg-red-500 text-white'
+            ? 'bg-pink-100 text-pink-700 border-pink-300' 
+            : 'bg-rose-100 text-rose-700 border-rose-300'
         }`}>
           {notification.message}
         </div>
       )}
 
-      <main className="relative z-10 max-w-7xl mx-auto px-6 py-8">
-        
-        {/* Search Bar (Missing from your previous snippet but used in logic) */}
+      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        {/* Search Bar */}
         <div className="relative mb-8">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 w-5 h-5" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-pink-400 w-5 h-5 pointer-events-none" />
           <input 
             type="text"
-            placeholder="Search for baby essentials..."
+            placeholder="Search products..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-4  text-gray-700 bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border-none focus:ring-2 focus:ring-pink-300 outline-none transition-all"
+            className="w-full pl-12 pr-4 py-3 text-pink-900 bg-white border border-pink-200 shadow focus:ring-2 focus:ring-pink-300 outline-none transition-all placeholder:text-pink-300 focus:bg-pink-50/40"
+            aria-label="Search products"
+            autoComplete="off"
           />
         </div>
 
         <div className="flex flex-col md:flex-row gap-6 mb-8">
-          {/* Categories Filter */}
-          <div className="flex-1">
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 shadow-lg">
-              <div className="flex items-center gap-2 mb-3">
-                <Filter className="w-5 h-5 text-pink-500" />
-                <h3 className="font-bold text-gray-700">Categories</h3>
-              </div>
-              <div className="flex flex-wrap gap-2">
+          {/* Categories & Sort Controls - New Visual Pattern */}
+          <div className="w-full flex flex-col sm:flex-row items-center gap-4 mb-6">
+            {/* Categories: pills on all views, horizontal scroll on mobile, wrap on desktop. Only one rendering per view. */}
+            <div className="w-full sm:w-auto flex-1 flex flex-col items-center sm:items-start">
+              {/* Desktop & tablet: flex-wrap pills */}
+              <div className="hidden sm:flex flex-wrap gap-3 pb-1 w-full max-w-7xl">
                 {categoriesLoading ? (
-                  <p className="text-sm text-gray-400">Loading categories...</p>
+                  <p className="text-sm text-pink-400">Loading categories...</p>
                 ) : (
                   displayCategories.map((cat) => (
                     <button
                       key={cat.key}
                       onClick={() => setSelectedCategory(cat.key)}
-                      className={`px-4 py-2 rounded-full font-semibold transition-all duration-300 ${
+                      className={`px-4 py-2 font-semibold border text-sm transition-colors duration-150 whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-300 rounded-md ${
                         selectedCategory === cat.key
-                          ? 'bg-linear-to-r from-pink-400 to-rose-400 text-white shadow-lg'
-                          : 'bg-white text-gray-600 hover:bg-pink-50 border-2 border-gray-200'
+                          ? 'bg-pink-500 text-white border-pink-500 shadow-md scale-105'
+                          : 'bg-white text-pink-700 border-pink-200 hover:bg-pink-100/60 hover:text-pink-900'
                       }`}
                     >
                       {cat.label}
@@ -289,21 +273,40 @@ export default function BabyProductsContent() {
                   ))
                 )}
               </div>
+              {/* Mobile: horizontal scroll pills */}
+              <div className="sm:hidden w-full overflow-x-auto pb-1 -mt-2">
+                <div className="flex gap-3 min-w-max w-full max-w-7xl mx-auto">
+                  {categoriesLoading ? (
+                    <p className="text-sm text-pink-400">Loading categories...</p>
+                  ) : (
+                    displayCategories.map((cat) => (
+                      <button
+                        key={cat.key}
+                        onClick={() => setSelectedCategory(cat.key)}
+                        className={`px-4 py-2 font-semibold border text-sm transition-colors duration-150 whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-300 rounded-md ${
+                          selectedCategory === cat.key
+                            ? 'bg-pink-500 text-white border-pink-500 shadow-md scale-105'
+                            : 'bg-white text-pink-700 border-pink-200 hover:bg-pink-100/60 hover:text-pink-900'
+                        }`}
+                      >
+                        {cat.label}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-
-          {/* Sort Dropdown */}
-          <div className="md:w-64">
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 shadow-lg">
-              <h3 className="font-bold text-gray-700 mb-3">Sort By</h3>
+            {/* Sort dropdown, always modern style */}
+            <div className="w-full sm:w-auto shrink-0">
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)} // Ensure this state update triggers useMemo
-                className="w-full px-4 py-2 rounded-xl border-2 text-gray-700 border-gray-200 focus:border-pink-400 focus:outline-none bg-white"
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full sm:w-auto px-4 py-2 border text-pink-700 border-pink-200 focus:border-pink-400 focus:outline-none bg-white font-semibold shadow-sm focus:ring-2 focus:ring-pink-300 rounded-md"
+                aria-label="Sort products"
               >
                 <option value="featured">Featured</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
+                <option value="price-low">Low to High</option>
+                <option value="price-high">High to Low</option>
                 <option value="newest">Newest</option>
               </select>
             </div>
@@ -311,47 +314,54 @@ export default function BabyProductsContent() {
         </div>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        <div className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 justify-items-center">
           {productsWithWishlist.map((product) => {
-            const thumbnail = product.images?.find(img => img.isMain)?.url || 
-                              product.images?.[0]?.url || 
+            const thumbnail = product.images?.find(img => img.isMain)?.url ||
+                              product.images?.[0]?.url ||
                               '/placeholder-baby.png';
-
             return (
-              <div key={product.id} className="group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden flex flex-col">
-                <div className="relative">
-                  <div 
-                    onClick={() => router.push(`/client/product/${product.id}`)}
-                    className="relative bg-pink-100 p-8 h-64 flex items-center justify-center overflow-hidden cursor-pointer"
-                  >
-                    <img src={thumbnail} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
-                  </div>
+              <div 
+                key={product.id} 
+                className="group flex flex-col h-full cursor-pointer w-full mx-auto overflow-hidden bg-white shadow-md hover:shadow-xl border border-pink-100/50 transition-all duration-300 hover:-translate-y-1 focus-within:ring-2 focus-within:ring-pink-300 rounded-md"
+                tabIndex={0}
+                onClick={() => router.push(`/client/product/${product.id}`)}
+                onKeyDown={e => { if (e.key === 'Enter') router.push(`/client/product/${product.id}`); }}
+              >
+                {/* Image container: Square aspect ratio is taller than your original but balanced */}
+                <div className="relative aspect-square w-full flex items-center justify-center overflow-hidden bg-white shrink-0 shadow-md group-hover:shadow-lg transition-all">
+                  <img 
+                    src={thumbnail} 
+                    alt={product.name} 
+                    className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105 rounded-md" 
+                    loading="lazy"
+                  />
                   <button 
-                    onClick={() => handleWishlistToggle(product)}
-                    className="absolute top-4 right-4 bg-white/80 backdrop-blur-sm rounded-full p-2 hover:bg-white transition-colors"
+                    onClick={e => { e.stopPropagation(); handleWishlistToggle(product); }}
+                    className={`absolute top-2 right-2 p-2 text-pink-400 hover:text-rose-500 hover:bg-rose-50 transition-all active:scale-95 shadow-sm hover:shadow-md bg-white/80 focus:outline-none focus:ring-2 focus:ring-pink-300 rounded-md`}
+                    title="Add to wishlist"
+                    aria-label={product.isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
                   >
-                    <Heart className={`w-6 h-6 ${product.isWishlisted ? 'text-pink-500 fill-current' : 'text-gray-500'}`} />
+                    <Heart className={`w-5 h-5 ${product.isWishlisted ? 'fill-pink-500 text-pink-500' : 'text-pink-300'}`} />
                   </button>
                 </div>
-                <div className="p-6 flex flex-col flex-grow">
-                  <h3 className="font-bold text-lg text-gray-800 mb-2 h-14 overflow-hidden text-ellipsis line-clamp-2">{product.name}</h3>
-                  <div className="flex items-center gap-2 mb-4 mt-auto">
-                    <span className="text-2xl font-bold text-pink-500">${Number(product.price).toFixed(2)}</span>
+                {/* Compact text area */}
+                <div className="py-8 px-5 flex flex-col grow justify-between gap-6">
+                  <div>
+                    <h3 className="font-extrabold text-gray-700 text-base sm:text-lg line-clamp-2 mb-2">{product.name}</h3>
+                    <p className="text-pink-500 font-bold text-md pt-1 pb-2 mt-0">${Number(product.price).toFixed(2)}</p>
                   </div>
                   <button 
-                    onClick={() => handleAddToCart(product)}
+                    onClick={e => { e.stopPropagation(); handleAddToCart(product); }}
                     disabled={addingToCart === product.id}
-                    className="w-full bg-linear-to-r from-pink-400 to-rose-400 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full bg-pink-500 text-white py-3 font-bold hover:bg-rose-500 transition-colors disabled:opacity-50 flex items-center justify-center gap-3 text-sm sm:text-base shadow focus:outline-none focus:ring-2 focus:ring-pink-300 rounded-md"
+                    aria-label="Add to cart"
                   >
                     {addingToCart === product.id ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Adding...
-                      </>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     ) : (
                       <>
                         <ShoppingCart className="w-5 h-5" />
-                        Add to Cart
+                        <span>Add to Cart</span>
                       </>
                     )}
                   </button>
@@ -362,12 +372,13 @@ export default function BabyProductsContent() {
         </div>
 
         {filteredProducts.length === 0 && (
-          <div className="text-center py-20">
-             <h3 className="text-2xl font-bold text-gray-700">No products found</h3>
-             <p className="text-gray-600">Try changing your filters or search query.</p>
-          </div>
+            <div className="text-center py-20">
+              <h3 className="text-2xl font-extrabold text-pink-700 mb-2">No products found</h3>
+              <p className="text-pink-400 text-base">Try changing your filters or search query.</p>
+            </div>
         )}
       </main>
+    </div>
     </div>
   );
 }

@@ -1,277 +1,165 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { ShoppingCart } from "lucide-react";
-import CartProductCard, { CartItem } from "./productCard";
+import React, { useState } from "react";
+import { ShoppingCart, X, CreditCard } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useGetCartQuery, useAddToCartMutation, useDeleteCartItemMutation } from "@/state/api";
+import CartProductCard from "./productCard";
 
-type Props = {};
+interface CartProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
 
-const page = (props: Props) => {
+const CartPage = ({ isOpen, onClose }: CartProps) => {
   const router = useRouter();
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  // Fetch cart items from API
-  const fetchCart = async () => {
+  const userStr = typeof window !== 'undefined' ? (localStorage.getItem('user') || sessionStorage.getItem('user')) : null;
+  const user = userStr ? JSON.parse(userStr) : null;
+  const userId = user?.id;
+
+  // 1. Destructure 'refetch' from the query hook
+  const { data: cartData, isLoading, refetch } = useGetCartQuery(userId, { 
+    skip: !userId || !isOpen,
+    refetchOnMountOrArgChange: true // Optional: ensures fresh data whenever sidebar opens
+  });
+  
+  const [addToCart] = useAddToCartMutation();
+  const [deleteCartItem] = useDeleteCartItemMutation();
+
+  if (!isOpen) return null;
+
+  // 2. Updated Quantity Change Logic
+  const handleQuantityChange = async (productId: number, delta: number) => {
+    if (!userId) return;
     try {
-      const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
-      if (!userStr) {
-        setCartItems([]);
-        setLoading(false);
-        return;
-      }
-
-      const user = JSON.parse(userStr);
-      const userId = user.id;
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/cart/${userId}`
-      );
+      // We wait for the API to succeed
+      await addToCart({ userId, productId, quantity: delta }).unwrap();
       
-      if (response.ok) {
-        const data = await response.json();
-        // Transform API response to CartItem format
-        const items = data.items?.map((item: any) => {
-          return {
-            id: item.productId,
-            cartItemId: item.id,
-            name: item.product?.name || 'Product',
-            price: Number(item.product?.price) || 0,
-            quantity: item.quantity,
-            images: item.product?.images || [],
-          };
-        }) || [];
-        setCartItems(items);
-      }
-    } catch (error) {
-      console.error('Error fetching cart:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    // Initial fetch
-    fetchCart();
-
-    // Poll cart every 1 second for instant updates
-    const pollInterval = setInterval(() => {
-      fetchCart();
-    }, 30000);
-
-    // Also listen for cartUpdated event
-    const handleCartUpdate = () => {
-      console.log('🔄 Cart update event detected - refetching immediately...');
-      fetchCart();
-    };
-
-    window.addEventListener('cartUpdated', handleCartUpdate);
-
-    return () => {
-      clearInterval(pollInterval);
-      window.removeEventListener('cartUpdated', handleCartUpdate);
-    };
-  }, []);
-
-  const handleQuantityChange = async (id: number, cartItemId: number | undefined, delta: number) => {
-    if (!cartItemId) return;
-
-    const currentItem = cartItems.find(item => item.id === id);
-    if (!currentItem) return;
-
-    const newQuantity = Math.max(1, currentItem.quantity + delta);
-
-    try {
-      // Update on backend
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/cart/${cartItemId}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ quantity: newQuantity }),
-        }
-      );
-
-      if (response.ok) {
-        // Optimistically update UI
-        setCartItems((items) =>
-          items.map((item) =>
-            item.id === id
-              ? { ...item, quantity: newQuantity }
-              : item
-          )
-        );
-        setNotification({ message: 'Quantity updated!', type: 'success' });
-        setTimeout(() => setNotification(null), 2000);
-      } else {
-        const error = await response.json();
-        const errorMsg = error.message || 'Could not update quantity';
-        
-        // Show red error message
-        setNotification({ 
-          message: errorMsg.includes('stock') ? '❌ Out of Stock - Not enough quantity available' : errorMsg, 
-          type: 'error' 
-        });
-        setTimeout(() => setNotification(null), 3000);
-        
-        // Refetch if there was an error
-        fetchCart();
-      }
-    } catch (error) {
-      console.error('Error updating quantity:', error);
+      // TRIGGER REFRESH
+      await refetch(); 
+      
+      setNotification({ message: 'Cart updated!', type: 'success' });
+      setTimeout(() => setNotification(null), 2000);
+    } catch (error: any) {
       setNotification({ 
-        message: '❌ Failed to update quantity', 
+        message: error.data?.message || '❌ Stock limit reached', 
         type: 'error' 
       });
       setTimeout(() => setNotification(null), 3000);
-      // Refetch on error
-      fetchCart();
     }
   };
 
-  const handleDelete = async (id: number) => {
-    try {
-      // Find the cart item to get cartItemId
-      const cartItem = cartItems.find(item => item.id === id);
-      if (!cartItem?.cartItemId) return;
+  // 3. Updated Delete Logic
+  function handleDeleteCartItem(cartItemId: number) {
+    deleteCartItem({ cartItemId })
+      .unwrap()
+      .then(async () => {
+        // TRIGGER REFRESH
+        await refetch();
+        
+        setNotification({ message: 'Item removed from cart!', type: 'success' });
+        setTimeout(() => setNotification(null), 2000);
+      })
+      .catch((error: any) => {
+        setNotification({ 
+          message: error.data?.message || '❌ Failed to remove item', 
+          type: 'error' 
+        });
+        setTimeout(() => setNotification(null), 3000);
+      });
+  }
 
-      // Delete from backend
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/cart/${cartItem.cartItemId}`,
-        { method: 'DELETE' }
-      );
-
-      if (response.ok) {
-        // Remove from local state only after successful deletion
-        setCartItems((items) => items.filter((item) => item.id !== id));
-      }
-    } catch (error) {
-      console.error('Error deleting item:', error);
-    }
-  };
-
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+  const subtotal = cartData?.items?.reduce(
+    (sum: number, item: any) => sum + (Number(item.product?.price || 0) * item.quantity),
     0
-  );
+  ) || 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-yellow-50 to-blue-50 relative overflow-hidden">
-      {/* Notification Toast */}
+    <div className="fixed inset-0 z-50 overflow-hidden">
       {notification && (
-        <div className={`fixed top-6 right-6 px-6 py-4 rounded-xl shadow-lg z-50 transition-all duration-300 ${
-          notification.type === 'success' 
-            ? 'bg-green-500 text-white' 
-            : 'bg-red-500 text-white'
+        <div className={`fixed top-6 right-6 px-6 py-4 rounded-xl shadow-lg z-60 transition-all ${
+          notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
         }`}>
           {notification.message}
         </div>
       )}
 
-      {/* Decorative background elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-64 h-64 bg-pink-200/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-1/2 left-1/2 w-80 h-80 bg-yellow-200/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-      </div>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
 
-      {/* Overlay + Sidebar Cart */}
-      <main className="fixed inset-0 z-10 flex justify-end p-4 sm:p-8">
-        <div 
-          className="absolute inset-0 bg-black/25"
-          onClick={() => router.back()}
-        />
-
-        <aside className="relative z-10 w-full max-w-2xl bg-white/85 rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-white/60">
-          {/* Sidebar Header */}
-          <div className="bg-gradient-to-r from-pink-400 via-pink-500 to-rose-400 px-6 py-6 border-b border-pink-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-widest text-white/80 font-semibold mb-2">Anjun Baby Center</p>
-                <h2 className="text-3xl font-bold text-white">Your Cart</h2>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-white font-semibold">
-                  <ShoppingCart className="w-5 h-5" />
-                  <span>{cartItems.length}</span>
+      <div className="fixed inset-y-0 right-0 flex max-w-full pl-10">
+        <aside className="relative w-screen max-w-2xl transform transition-transform duration-500 ease-in-out">
+          <div className="flex h-full flex-col overflow-y-scroll bg-white/95 shadow-2xl border-l border-white/60">
+            
+            <div className="bg-gradient-to-r from-pink-400 via-pink-500 to-rose-400 px-6 py-8 text-white shadow-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-white/80 font-black mb-1">Anjun Baby Center</p>
+                  <h2 className="text-3xl font-black">Your Cart</h2>
                 </div>
-                <button 
-                  onClick={() => router.back()}
-                  className="w-12 h-12 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors"
-                  aria-label="Close cart"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full transition-colors outline-none">
+                  <X className="w-8 h-8" />
                 </button>
               </div>
             </div>
-          </div>
 
-          {/* Cart Content */}
-          {loading ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
-              <ShoppingCart className="w-12 h-12 text-gray-400 mb-3 animate-spin" />
-              <p className="text-lg font-bold text-gray-600">Loading cart...</p>
-            </div>
-          ) : cartItems.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
-              <ShoppingCart className="w-12 h-12 text-gray-400 mb-3" />
-              <p className="text-lg font-bold text-gray-600">Your cart is empty</p>
-              <p className="text-gray-500 text-sm">Add some adorable baby products!</p>
-            </div>
-          ) : (
-            <>
-              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-                {cartItems.map((item) => (
+            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
+              {isLoading ? (
+                <div className="h-full flex flex-col items-center justify-center text-pink-400">
+                  <div className="w-10 h-10 border-4 border-current border-t-transparent rounded-full animate-spin" />
+                  <p className="mt-4 font-bold animate-pulse">Fetching your treats...</p>
+                </div>
+              ) : !cartData?.items?.length ? (
+                <div className="h-full flex flex-col items-center justify-center opacity-30 text-gray-500">
+                  <ShoppingCart className="w-20 h-20 mb-4" />
+                  <p className="font-black uppercase tracking-widest text-xl">Bag is Empty</p>
+                  <button onClick={onClose} className="mt-4 text-pink-500 font-bold underline">Continue Shopping</button>
+                </div>
+              ) : (
+                cartData.items.map((item: any) => (
                   <CartProductCard
                     key={item.id}
-                    item={item}
-                    onQuantityChange={(delta) => handleQuantityChange(item.id, item.cartItemId, delta)}
-                    onDelete={() => handleDelete(item.id)}
+                    item={{
+                      id: item.productId,
+                      name: item.product?.name,
+                      price: item.product?.price,
+                      quantity: item.quantity,
+                      images: item.product?.images
+                    }}
+                    onQuantityChange={(delta: number) => handleQuantityChange(item.productId, delta)}
+                    onDelete={() => handleDeleteCartItem(item.id)}
                   />
-                ))}
+                ))
+              )}
+            </div>
+
+            <div className="border-t border-gray-100 bg-white px-8 py-8 space-y-4 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Subtotal</p>
+                  <span className="text-3xl font-black text-pink-600">${subtotal.toFixed(2)}</span>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Items</p>
+                  <p className="font-bold text-gray-700">{cartData?.items?.length || 0}</p>
+                </div>
               </div>
 
-              {/* Summary & Actions */}
-              <div className="border-t border-gray-200 bg-white/80 px-6 py-5 space-y-3">
-                <div className="flex justify-between text-sm text-gray-700">
-                  <span>Subtotal</span>
-                  <span className="font-semibold"> {subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm text-gray-700">
-                  <span>Shipping</span>
-                  <span className="font-semibold text-green-600">Free</span>
-                </div>
-                <div className="flex justify-between items-center pt-2 border-t border-gray-200">
-                  <span className="text-lg font-bold text-gray-800">Total</span>
-                  <span className="text-2xl font-bold bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent">
-                    $ {subtotal.toFixed(2)}
-                  </span>
-                </div>
-
-                <button className="w-full bg-gradient-to-r from-pink-400 via-pink-500 to-rose-400 text-white py-3 rounded-xl font-bold text-sm hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2">
-                  <ShoppingCart className="w-4 h-4" />
-                  Checkout
-                </button>
-
-                <button className="w-full bg-white border-2 border-gray-200 text-gray-700 py-2 rounded-xl font-semibold text-sm hover:border-pink-400 hover:bg-pink-50 transition-all duration-300">
-                  Continue Shopping
-                </button>
-              </div>
-            </>
-          )}
+              <button 
+                onClick={() => { onClose(); router.push('/client/checkout'); }}
+                className="w-full bg-gray-900 hover:bg-pink-500 text-white py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl active:scale-[0.98] flex items-center justify-center gap-3"
+              >
+                <CreditCard className="w-5 h-5" />
+                Secure Checkout
+              </button>
+              <p className="text-center text-[10px] text-gray-400 font-medium">Shipping and taxes calculated at checkout</p>
+            </div>
+          </div>
         </aside>
-      </main>
+      </div>
     </div>
   );
 };
 
-export default page;
-
-
-
-
-
+export default CartPage;

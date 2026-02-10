@@ -56,7 +56,7 @@ const ProductPage = () => {
         <div className="flex gap-4 items-center">
           <button
             onClick={() => setCreateModalOpen(true)}
-            className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl shadow-md hover:bg-green-700 font-medium"
+            className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-pink-400 text-white rounded-xl shadow-md hover:bg-rose-700 font-medium"
           >
             <Plus size={20} />
             Create New Product
