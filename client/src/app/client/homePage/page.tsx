@@ -231,84 +231,87 @@ export default function HomePage() {
         </div>
       )}
 
-      <div className="mt-[70px]">
+      <div className="mt-[110px]">
         {/* Hero Banner Slider */}
         {heroBanners.length > 0 && (
-          <section className="relative w-full h-[400px] md:h-[600px] overflow-hidden bg-gradient-to-br from-pink-50 to-rose-50">
-            {heroBanners.map((banner, index) => {
-              const imageUrl = isMobile && banner.mobileImageUrl ? banner.mobileImageUrl : banner.imageUrl;
-              return (
-                <div
-                  key={banner.id}
-                  className={`absolute inset-0 transition-opacity duration-1000 ${
-                    index === currentSlide ? 'opacity-100' : 'opacity-0'
-                  }`}
-                >
-                  <img 
-                    src={imageUrl}
-                    alt={banner.title || 'Banner'} 
-                    className="w-full h-full object-cover"
-                  />
-                  {banner.title && (
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end">
-                      <div className="p-8 md:p-12 text-white">
-                        <h2 className="text-3xl md:text-5xl font-extrabold mb-4">{banner.title}</h2>
-                        {banner.link && (
-                          <button
-                            onClick={() => router.push(banner.link!)}
-                            className="bg-white text-pink-600 px-6 py-3 rounded-md font-bold hover:bg-pink-50 transition-colors"
-                          >
-                            Shop Now
-                          </button>
-                        )}
-                      </div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <section className="relative h-[300px] sm:h-[350px] md:h-[400px] lg:h-[600px] overflow-hidden bg-gradient-to-br">
+              {heroBanners.map((banner, index) => {
+                const imageUrl = isMobile && banner.mobileImageUrl ? banner.mobileImageUrl : banner.imageUrl;
+                return (
+                  <div className="w-full h-full absolute inset-0 transition-opacity duration-1000 rounded-xl overflow-hidden"
+                    key={banner.id}
+                    style={{ zIndex: index === currentSlide ? 1 : 0 }}
+                  >
+                    <div className={index === currentSlide ? 'opacity-100 h-full' : 'opacity-0 h-full'}>
+                      <img 
+                        src={imageUrl}
+                        alt={banner.title || 'Banner'} 
+                        className="w-full h-full object-cover rounded-xl"
+                        style={{ display: 'block', height: '100%' }}
+                      />
+                      {banner.title && (
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end">
+                          <div className="p-8 md:p-12 text-white">
+                            <h2 className="text-3xl md:text-5xl font-extrabold mb-4">{banner.title}</h2>
+                            {banner.link && (
+                              <button
+                                onClick={() => router.push(banner.link!)}
+                                className="bg-white text-pink-600 px-6 py-3 rounded-md font-bold hover:bg-pink-50 transition-colors"
+                              >
+                                Shop Now
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                  </div>
+                );
+              })}
 
-            {heroBanners.length > 1 && (
-              <>
-                <button
-                  onClick={prevSlide}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-3 rounded-full shadow-lg transition-all z-10"
-                >
-                  <ChevronLeft className="w-6 h-6 text-gray-800" />
-                </button>
-                <button
-                  onClick={nextSlide}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-3 rounded-full shadow-lg transition-all z-10"
-                >
-                  <ChevronRight className="w-6 h-6 text-gray-800" />
-                </button>
+              {heroBanners.length > 1 && (
+                <>
+                  <button
+                    onClick={prevSlide}
+                    className="absolute left-6 top-1/2 -translate-y-1/2 bg-white/40 hover:bg-white p-3 rounded-full shadow-lg transition-all z-10"
+                  >
+                    <ChevronLeft className="w-6 h-6 text-gray-800" />
+                  </button>
+                  <button
+                    onClick={nextSlide}
+                    className="absolute right-6 top-1/2 -translate-y-1/2 bg-white/40 hover:bg-white p-3 rounded-full shadow-lg transition-all z-10"
+                  >
+                    <ChevronRight className="w-6 h-6 text-gray-800" />
+                  </button>
 
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-                  {heroBanners.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentSlide(index)}
-                      className={`w-2 h-2 rounded-full transition-all ${
-                        index === currentSlide ? 'bg-white w-8' : 'bg-white/50'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </section>
+                  <div className="absolute bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                    {heroBanners.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentSlide(index)}
+                        className={`w-2 h-2 rounded-full transition-all ${
+                          index === currentSlide ? 'bg-white w-8' : 'bg-white/50'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </section>
+          </div>
         )}
 
         {/* Secondary Banners */}
         {secondaryBanners.length > 0 && (
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-            <div className={`grid grid-cols-1 ${secondaryBanners.length === 2 ? 'md:grid-cols-2' : secondaryBanners.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2 lg:grid-cols-4'} gap-6`}>
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 py-3 ">
+            <div className={`grid grid-cols-1 gap-6 ${secondaryBanners.length === 2 ? 'md:grid-cols-2' : secondaryBanners.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2 lg:grid-cols-4'} gap-6`}>
               {secondaryBanners.slice(0, 4).map((banner) => {
                 const imageUrl = isMobile && banner.mobileImageUrl ? banner.mobileImageUrl : banner.imageUrl;
                 return (
                   <div 
                     key={banner.id}
-                    className="relative h-48 md:h-64 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow cursor-pointer group"
+                    className="relative h-48 md:h-64 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow cursor-pointer group"
                     onClick={() => banner.link && router.push(banner.link)}
                   >
                     <img 
@@ -317,7 +320,7 @@ export default function HomePage() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     {banner.title && (
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                      <div className="absolute inset-0  flex items-end p-4">
                         <h3 className="text-white font-bold text-lg">{banner.title}</h3>
                       </div>
                     )}
@@ -330,20 +333,16 @@ export default function HomePage() {
 
         {/* Flash Sale Section */}
         {flashSaleProducts.length > 0 && (
-          <section className="bg-gradient-to-br from-rose-50 to-pink-50 py-12">
+          <section className="bg-white mt-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
-                  <div className="bg-rose-500 p-3 rounded-full">
-                    <Zap className="w-6 h-6 text-white" />
-                  </div>
                   <div>
-                    <h2 className="text-3xl font-extrabold text-gray-800">Flash Sale</h2>
-                    <p className="text-pink-600">Limited time offers!</p>
+                    <h1 className="text-3xl py-4 font-extrabold text-gray-800">Flash Sale</h1>
                   </div>
                 </div>
                 <button
-                  onClick={() => router.push('/client/products?filter=flash-sale')}
+                  onClick={() => router.push('/client/product?filter=flash-sale')}
                   className="flex items-center gap-2 text-pink-600 hover:text-rose-600 font-semibold transition-colors"
                 >
                   View All <ArrowRight className="w-5 h-5" />
@@ -359,7 +358,7 @@ export default function HomePage() {
 
         {/* Promotional Banner */}
         {promotionalBanners.length > 0 && (
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 mt-10 py-8">
             {promotionalBanners.slice(0, 1).map((banner) => {
               const imageUrl = isMobile && banner.mobileImageUrl ? banner.mobileImageUrl : banner.imageUrl;
               return (
@@ -393,47 +392,42 @@ export default function HomePage() {
 
         {/* Featured Products */}
         {featuredProducts.length > 0 && (
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-3">
-                <div className="bg-pink-500 p-3 rounded-full">
-                  <Sparkles className="w-6 h-6 text-white" />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 rounded-xl overflow-hidden bg-white shadow">
+            <section>
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <h1 className="text-3xl font-extrabold text-gray-800">Featured Products</h1>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-3xl font-extrabold text-gray-800">Featured Products</h2>
-                  <p className="text-pink-600">Handpicked just for you</p>
-                </div>
+                <button
+                  onClick={() => router.push('/client/product?filter=featured')}
+                  className="flex items-center gap-2 text-pink-600 hover:text-rose-600 font-semibold transition-colors"
+                >
+                  View All <ArrowRight className="w-5 h-5" />
+                </button>
               </div>
-              <button
-                onClick={() => router.push('/client/products?filter=featured')}
-                className="flex items-center gap-2 text-pink-600 hover:text-rose-600 font-semibold transition-colors"
-              >
-                View All <ArrowRight className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {featuredProducts.map(product => <ProductCard key={product.id} product={product} />)}
-            </div>
-          </section>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {featuredProducts.map(product => <ProductCard key={product.id} product={product} />)}
+              </div>
+            </section>
+          </div>
         )}
 
         {/* Trending Products */}
         {trendingProducts.length > 0 && (
-          <section className="bg-pink-50 py-12">
+          <section className="bg-white py-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
-                  <div className="bg-purple-500 p-3 rounded-full">
-                    <TrendingUp className="w-6 h-6 text-white" />
-                  </div>
+                  
                   <div>
-                    <h2 className="text-3xl font-extrabold text-gray-800">Trending Now</h2>
-                    <p className="text-pink-600">What's hot right now</p>
+                    <h1 className="text-3xl font-extrabold text-gray-800">Trending Now</h1>
+                    
                   </div>
                 </div>
                 <button
-                  onClick={() => router.push('/client/products?filter=trending')}
+                  onClick={() => router.push('/client/product?filter=trending')}
                   className="flex items-center gap-2 text-pink-600 hover:text-rose-600 font-semibold transition-colors"
                 >
                   View All <ArrowRight className="w-5 h-5" />
@@ -447,27 +441,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* Newsletter Section */}
-        <section className="bg-gradient-to-r from-pink-500 to-rose-500 py-16">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4">
-              Join the Anjun Family
-            </h2>
-            <p className="text-pink-100 text-lg mb-8">
-              Subscribe to get special offers, free giveaways, and updates
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 px-6 py-4 rounded-md focus:outline-none focus:ring-2 focus:ring-white"
-              />
-              <button className="bg-white text-pink-600 px-8 py-4 rounded-md font-bold hover:bg-pink-50 transition-colors">
-                Subscribe
-              </button>
-            </div>
-          </div>
-        </section>
+        
       </div>
 
       <Footer />

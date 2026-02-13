@@ -191,20 +191,6 @@ export default function Footer() {
           </div>
         </div>
       </div>
-
-      {/* Payment Methods */}
-      <div className="bg-gray-950 py-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-gray-500">Secure Payment Methods</p>
-            <div className="flex items-center gap-4 flex-wrap justify-center">
-              <div className="px-3 py-1 bg-white rounded text-xs font-bold text-gray-800">VISA</div>
-              <div className="px-3 py-1 bg-white rounded text-xs font-bold text-gray-800">MASTERCARD</div>
-              <div className="px-3 py-1 bg-white rounded text-xs font-bold text-pink-600">CASH ON DELIVERY</div>
-            </div>
-          </div>
-        </div>
-      </div>
     </footer>
   );
 }

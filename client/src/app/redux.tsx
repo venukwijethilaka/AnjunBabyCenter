@@ -91,6 +91,28 @@ export default function StoreProvider({
   if (!storeRef.current) {
     storeRef.current = makeStore();
     setupListeners(storeRef.current.dispatch);
+    // Hydrate auth state from localStorage/sessionStorage
+    if (typeof window !== "undefined") {
+      const userStr = localStorage.getItem("user") || sessionStorage.getItem("user");
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const refreshToken = localStorage.getItem("refreshToken") || sessionStorage.getItem("refreshToken");
+      if (userStr && token) {
+        try {
+          const user = JSON.parse(userStr);
+          storeRef.current.dispatch({
+            type: "auth/setCredentials",
+            payload: {
+              user,
+              token,
+              refreshToken: refreshToken || undefined,
+              isRestoring: true,
+            },
+          });
+        } catch (e) {
+          // ignore parse errors
+        }
+      }
+    }
   }
   const persistor = persistStore(storeRef.current);
 

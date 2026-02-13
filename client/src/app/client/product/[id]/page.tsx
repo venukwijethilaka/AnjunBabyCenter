@@ -262,7 +262,7 @@ function ProductDetailPageContent({ id }: ProductDetailPageContentProps) {
               </div>
 
               <div className="border-t border-gray-100 pt-10 mb-12">
-                <p className="text-pink-600 leading-relaxed text-lg">
+                <p className="text-gray-950 leading-relaxed text-lg">
                   {product.description}
                 </p>
               </div>
