@@ -145,7 +145,7 @@ export interface OrderItem {
 export interface Order {
   id: number;
   userId: number;
-  totalAmount: string;
+  totalAmount: number;
   status: 'PENDING' | 'ARRANGING' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED';
   createdAt: string;
   updatedAt: string;
@@ -339,7 +339,7 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
 export const api = createApi({
   baseQuery: baseQueryWithReauth, 
   reducerPath: "api",
-  tagTypes: ["Products", "User", "Loyalty","Categories","Cart",'Order', 'UserOrders','Banner', 'ActiveBanners'], // ✅ Added Loyalty Tag
+  tagTypes: ["Products", "User", "Loyalty", "Categories", "Cart", "Order", "UserOrders", "Banner", "ActiveBanners"],
   endpoints: (build) => ({
       
       // --- AUTH ENDPOINTS ---
@@ -618,6 +618,7 @@ export const api = createApi({
               { type: 'Order', id: orderId },
               'UserOrders',
               'Order',
+              'User',
             ],
           }),
       

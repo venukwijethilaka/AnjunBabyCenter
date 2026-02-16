@@ -13,9 +13,7 @@ const UserDetailsModal = ({ isOpen, onClose, user }: UserDetailsModalProps) => {
   if (!isOpen || !user) return null;
 
   // ✅ Calculate Total Purchases
-const totalSpent = user.orders?.reduce((sum: number, order) => {
-  return sum + Number(order.totalAmount);
-}, 0) || 0;
+ const totalSpent = user.orders?.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0) || 0;
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -147,7 +145,7 @@ const totalSpent = user.orders?.reduce((sum: number, order) => {
                                         {new Date(order.createdAt).toLocaleDateString()}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                                        ${Number(order.totalAmount).toFixed(2)}
+                                        ${order.totalAmount.toFixed(2)}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {order.items?.length || 0} Items
