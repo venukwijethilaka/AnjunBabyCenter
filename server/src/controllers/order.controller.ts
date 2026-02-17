@@ -1,3 +1,6 @@
+import type { Request, Response } from "express";
+import * as orderService from '../services/order.service';
+
 export const handleUpdateTrackingId = async (req: Request, res: Response) => {
   try {
     const { orderId } = req.params;
@@ -15,17 +18,19 @@ export const handleUpdateOrderStatus = async (req: Request, res: Response) => {
   try {
     const { orderId } = req.params;
     const { status, trackingId } = req.body;
+
     if (typeof orderId !== 'string' || !status) {
       return res.status(400).json({ message: 'Order ID and status are required' });
     }
+
+    // This call now handles the loyalty points automatically inside the service
     const updatedOrder = await orderService.updateOrderStatus(parseInt(orderId), status, trackingId);
     res.json(updatedOrder);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Failed to update order status' });
   }
 };
-import type { Request, Response } from "express";
-import * as orderService from '../services/order.service';
 
 export const handleCreateOrder = async (req: Request, res: Response) => {
   try {

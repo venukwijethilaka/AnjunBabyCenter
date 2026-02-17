@@ -10,12 +10,16 @@ const AdminLayout = ({children}: {children: React.ReactNode}) => {
   return (
     <div className="flex bg-white text-gray-900 w-full h-screen overflow-hidden">
         <Sidebar />
-        <main className={`flex flex-col w-full h-screen bg-gray-200 overflow-hidden transition-all duration-300 ${ isSidebarCollapsed ? "md:pl-24" : "md:pl-72" }`}>
+        {/* Changed main to overflow-hidden so it doesn't scroll the Navbar away */}
+        <main className={`flex flex-col w-full h-screen bg-gray-50 overflow-hidden transition-all duration-300 ${ isSidebarCollapsed ? "md:pl-24" : "md:pl-72" }`}>
+            
             <div className="pt-7 px-9 shrink-0">
                 <Navbar />
             </div>
-            {/* The wrapper below allows children to fill the screen but not push it down */}
-            <div className="flex-1 overflow-hidden flex flex-col px-9 pb-7">
+
+            {/* ✅ FIXED: Changed overflow-hidden to overflow-y-auto */}
+            {/* Added custom-scrollbar for better visibility */}
+            <div className="flex-1 overflow-y-auto px-9 pb-10 custom-scrollbar">
                 {children}
             </div>
         </main>

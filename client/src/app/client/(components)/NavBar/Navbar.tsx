@@ -9,6 +9,11 @@ import {
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/app/redux";
 import { logout } from "@/state/authSlice";
+import { 
+  useGetLoyaltyLevelsQuery, 
+  useGetProductsQuery, 
+  useGetProfileQuery 
+} from "@/state/api";
 import CartSidebar from "../../Cart/page";
 import WishlistSidebar from "../../wishlist/page";
 
