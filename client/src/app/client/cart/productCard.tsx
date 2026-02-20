@@ -5,7 +5,6 @@ import { Trash2, Plus, Minus } from "lucide-react";
 
 export type CartItem = {
   id: number;
-  cartItemId?: number;
   name: string;
   price: number;
   quantity: number;
@@ -20,9 +19,9 @@ type Props = {
 
 const CartProductCard = ({ item, onQuantityChange, onDelete }: Props) => {
   return (
-    <div className="group flex items-center gap-4 p-4 rounded-2xl bg-white border border-pink-100 shadow-sm hover:shadow-md transition-all">
-      {/* Image */}
-      <div className="w-20 h-20 bg-pink-50 rounded-xl overflow-hidden shrink-0">
+    <div className="flex items-center gap-4 p-3 rounded-xl bg-white border border-gray-100 hover:border-pink-200 transition-all">
+      {/* Image Container - Matches Homepage Card */}
+      <div className="w-16 h-16 bg-gray-50 rounded-lg overflow-hidden shrink-0 border border-gray-50">
         <img
           src={item.images?.[0]?.url || "/placeholder.png"}
           alt={item.name}
@@ -30,30 +29,30 @@ const CartProductCard = ({ item, onQuantityChange, onDelete }: Props) => {
         />
       </div>
 
-      {/* Info */}
+      {/* Product Info */}
       <div className="flex-1 min-w-0">
-        <h3 className="text-[13px] font-black text-gray-800 truncate uppercase tracking-tight">
+        <h3 className="text-sm font-bold text-gray-800 truncate mb-0.5">
           {item.name}
         </h3>
-        <p className="text-[14px] font-bold text-pink-500">
+        <p className="text-sm font-extrabold text-pink-600">
           ${Number(item.price).toFixed(2)}
         </p>
 
-        {/* Quantity Controls */}
-        <div className="flex items-center gap-3 mt-2">
-          <div className="flex items-center bg-gray-50 rounded-lg border border-gray-100 p-1">
+        {/* Updated Quantity Control - Slimmer */}
+        <div className="flex items-center mt-2">
+          <div className="flex items-center border border-gray-200 rounded-md overflow-hidden bg-white shadow-sm">
             <button 
               onClick={() => onQuantityChange(-1)}
-              className="p-1 hover:bg-pink-100 rounded-md text-gray-400 hover:text-pink-600 transition-colors"
+              className="px-2 py-1 hover:bg-gray-50 text-gray-500 transition-colors"
             >
               <Minus className="w-3 h-3" />
             </button>
-            <span className="text-[12px] font-black w-8 text-center text-gray-700">
+            <span className="px-2 text-xs font-bold text-gray-700 border-x border-gray-100 min-w-[30px] text-center">
               {item.quantity}
             </span>
             <button 
               onClick={() => onQuantityChange(1)}
-              className="p-1 hover:bg-pink-100 rounded-md text-gray-400 hover:text-pink-600 transition-colors"
+              className="px-2 py-1 hover:bg-gray-50 text-gray-500 transition-colors"
             >
               <Plus className="w-3 h-3" />
             </button>
@@ -61,15 +60,15 @@ const CartProductCard = ({ item, onQuantityChange, onDelete }: Props) => {
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex flex-col items-end justify-between h-20">
+      {/* Delete/Total Section */}
+      <div className="flex flex-col items-end justify-between self-stretch">
         <button 
           onClick={onDelete}
-          className="p-2 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-all"
+          className="p-1.5 text-gray-300 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-all"
         >
           <Trash2 className="w-4 h-4" />
         </button>
-        <p className="text-[12px] font-black text-gray-400">
+        <p className="text-xs font-bold text-gray-400">
           ${(item.price * item.quantity).toFixed(2)}
         </p>
       </div>

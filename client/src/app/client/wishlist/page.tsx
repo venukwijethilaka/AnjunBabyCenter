@@ -1,14 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Heart, X, ShoppingCart, Trash2 } from "lucide-react";
+import { Heart, X, ShoppingCart, Trash2, HeartOff } from "lucide-react";
+import WishlistProductCard from "./productCard";
 
 export type WishlistItem = {
   id: number;
   wishlistItemId?: number;
   name: string;
   price: number;
-  images?: { url: string }[];
+  images?: { url: string; isMain: boolean }[];
   description?: string;
 };
 
@@ -22,7 +23,6 @@ const WishlistSidebar = ({ isOpen, onClose }: WishlistSidebarProps) => {
   const [loading, setLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
 
-  // Sync animation visibility
   useEffect(() => {
     if (isOpen) {
       setIsVisible(true);
@@ -37,6 +37,7 @@ const WishlistSidebar = ({ isOpen, onClose }: WishlistSidebarProps) => {
 
   const fetchWishlist = async () => {
     try {
+      setLoading(true);
       const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
       if (!userStr) return;
       const user = JSON.parse(userStr);
@@ -50,6 +51,7 @@ const WishlistSidebar = ({ isOpen, onClose }: WishlistSidebarProps) => {
           name: item.product?.name || 'Product',
           price: Number(item.product?.price) || 0,
           images: item.product?.images || [],
+          description: item.product?.description
         })) || [];
         setWishlistItems(items);
       }
@@ -61,7 +63,7 @@ const WishlistSidebar = ({ isOpen, onClose }: WishlistSidebarProps) => {
   };
 
   const handleAddToCart = async (id: number) => {
-    // ... (Keep your handleAddToCart logic)
+    // Logic for adding to cart goes here
     window.dispatchEvent(new Event('cartUpdated'));
   };
 
@@ -73,6 +75,7 @@ const WishlistSidebar = ({ isOpen, onClose }: WishlistSidebarProps) => {
         method: 'DELETE'
       });
       if (res.ok) setWishlistItems(prev => prev.filter(i => i.id !== id));
+      window.dispatchEvent(new Event('wishlistUpdated'));
     } catch (err) {
       console.error(err);
     }
@@ -81,79 +84,74 @@ const WishlistSidebar = ({ isOpen, onClose }: WishlistSidebarProps) => {
   if (!isVisible && !isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[1000] flex justify-end">
-      {/* SHARP CLICKABLE BACKGROUND */}
+    <div className="fixed inset-0 z-[100] overflow-hidden">
+      {/* Backdrop - Matches Cart style */}
       <div 
-        className={`absolute inset-0 bg-black/10 transition-opacity duration-300 ${
+        className={`absolute inset-0 bg-black/30 backdrop-blur-[2px] transition-opacity duration-300 ${
           isOpen ? "opacity-100" : "opacity-0"
         }`}
         onClick={onClose}
       />
 
-      {/* SIDEBAR PANEL */}
-      <aside 
-        className={`relative z-10 w-full max-w-[380px] bg-white h-screen shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
-        {/* Header - Small Font Style */}
-        <div className="p-5 border-b flex items-center justify-between">
-          <div>
-            <h2 className="text-[13px] font-black uppercase tracking-tight text-gray-800">Your Wishlist</h2>
-            <p className="text-[10px] font-bold text-pink-500">{wishlistItems.length} saved items</p>
-          </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-full">
-            <X className="w-5 h-5 text-gray-400" />
-          </button>
-        </div>
-
-        {/* List Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {loading ? (
-             <div className="flex justify-center pt-10"><div className="w-5 h-5 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" /></div>
-          ) : wishlistItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center pt-20 opacity-40">
-              <Heart className="w-8 h-8 mb-2" />
-              <p className="text-[11px] font-bold uppercase tracking-widest">Wishlist is empty</p>
-            </div>
-          ) : (
-            wishlistItems.map((item) => (
-              <div key={item.id} className="flex gap-3 pb-3 border-b border-gray-50">
-                <div className="w-16 h-16 bg-gray-50 rounded-lg overflow-hidden shrink-0">
-                  <img src={item.images?.[0]?.url} className="w-full h-full object-cover" />
-                </div>
-                <div className="flex-1 min-w-0 flex flex-col justify-between">
-                  <div className="flex justify-between items-start">
-                    <h3 className="text-[11px] font-bold text-gray-700 truncate">{item.name}</h3>
-                    <button onClick={() => handleDelete(item.id)} className="text-gray-300 hover:text-rose-500">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <p className="text-[12px] font-black text-pink-600">${item.price.toFixed(2)}</p>
-                    <button 
-                      onClick={() => handleAddToCart(item.id)}
-                      className="flex items-center gap-1 bg-pink-50 text-pink-500 px-2 py-1 rounded-md text-[10px] font-bold hover:bg-pink-500 hover:text-white transition-colors"
-                    >
-                      <ShoppingCart className="w-3 h-3" /> Add
-                    </button>
-                  </div>
-                </div>
+      <div className="fixed inset-y-0 right-0 flex max-w-full">
+        <aside 
+          className={`relative w-screen max-w-md bg-white shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out ${
+            isOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
+          {/* Header - Identical to Cart Header */}
+          <div className="px-6 py-6 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Heart className="w-6 h-6 text-pink-500 fill-pink-500" />
+                <h2 className="text-xl font-extrabold text-gray-800">My Wishlist</h2>
+                <span className="bg-pink-100 text-pink-600 text-xs px-2 py-0.5 rounded-full font-bold">
+                  {wishlistItems.length}
+                </span>
               </div>
-            ))
-          )}
-        </div>
+              <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <X className="w-6 h-6 text-gray-400" />
+              </button>
+            </div>
+          </div>
 
-        {/* Footer */}
-        <div className="p-6 bg-gray-50 border-t">
-          <button 
-            onClick={onClose}
-            className="w-full text-center text-[10px] font-bold text-gray-400 hover:text-pink-500 uppercase tracking-widest"
-          >
-            Return to Shopping
-          </button>
-        </div>
-      </aside>
+          {/* List Content */}
+          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 bg-gray-50/30">
+            {loading ? (
+               <div className="h-full flex items-center justify-center text-pink-500">
+                  <div className="w-8 h-8 border-3 border-current border-t-transparent rounded-full animate-spin" />
+               </div>
+            ) : wishlistItems.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                <HeartOff className="w-16 h-16 mb-4 opacity-20" />
+                <p className="font-semibold text-sm uppercase tracking-wider">Your wishlist is empty</p>
+                <button onClick={onClose} className="mt-2 text-pink-500 text-sm font-bold hover:underline">
+                  Find something you love
+                </button>
+              </div>
+            ) : (
+              wishlistItems.map((item) => (
+                <WishlistProductCard 
+                  key={item.id} 
+                  item={item} 
+                  onAddToCart={() => handleAddToCart(item.id)}
+                  onDelete={() => handleDelete(item.id)}
+                />
+              ))
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="border-t border-gray-100 bg-white p-6">
+            <button 
+              onClick={onClose}
+              className="w-full bg-pink-50 text-pink-500 py-4 rounded-xl font-bold transition-all hover:bg-pink-100 active:scale-[0.99] uppercase text-xs tracking-widest"
+            >
+              Continue Shopping
+            </button>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 };
