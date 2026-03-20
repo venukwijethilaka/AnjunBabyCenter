@@ -1,0 +1,184 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model LoyaltyLevel {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique
+  minPoints  Int
+  color      String
+  badgeColor String
+  updatedAt  DateTime @updatedAt
+  discount   Int      @default(0)
+}
+
+model User {
+  id       Int     @id @default(autoincrement())
+  name     String?
+  email    String  @unique
+  password String? // Optional for Google Login
+  googleId String? @unique
+  role     Role    @default(CUSTOMER)
+
+  // Profile & Reviews
+  avatar String? // Used for showing profile pics on product reviews
+
+  // Default Shipping Details
+  phone      String?
+  street     String?
+  city       String?
+  country    String?
+  postalCode String?
+
+  // E-commerce & Loyalty
+  loyaltyPoints Int @default(0)
+
+  // Security & Auth
+  isActive     Boolean @default(false)
+  refreshToken String?
+
+  // Admin Controls
+  banExpiresAt DateTime?
+  banReason    String?
+
+  // E-commerce Relations
+  cart     Cart?
+  orders   Order[]
+  wishlist Wishlist[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([role])
+}
+
+model Category {
+  id        Int        @id @default(autoincrement())
+  name      String
+  isActive  Boolean    @default(true)
+  parentId  Int?
+  createdAt DateTime   @default(now())
+  imageUrl  String?
+  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryHierarchy")
+  products  Product[]
+}
+
+model Product {
+  id                 Int                @id @default(autoincrement())
+  name               String
+  description        String
+  color              String?
+  size               String?
+  price              Decimal            @db.Decimal(10, 2)
+  quantity           Int
+  availability       Boolean            @default(true)
+  discountPercentage Decimal?           @db.Decimal(5, 2)
+  categoryId         Int
+  createdAt          DateTime           @default(now())
+  cartItems          CartItem[]
+  orderItems         OrderItem[]
+  category           Category           @relation(fields: [categoryId], references: [id])
+  images             ProductImage[]
+  wishlist           Wishlist[]
+  promotionalOffers  PromotionalOffer[] // NEW: Link to Promotional Offers
+}
+
+// NEW: Promotional Offer Model
+model PromotionalOffer {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  offerPrice  Decimal  @db.Decimal(10, 2)
+  endDate     DateTime
+  isActive    Boolean  @default(true)
+  productId   Int
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ProductImage {
+  id        Int     @id @default(autoincrement())
+  url       String
+  altText   String?
+  isMain    Boolean @default(false)
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Wishlist {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  productId Int
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId])
+}
+
+model Cart {
+  id        Int        @id @default(autoincrement())
+  userId    Int        @unique
+  createdAt DateTime   @default(now())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+}
+
+model CartItem {
+  id        Int     @id @default(autoincrement())
+  cartId    Int
+  productId Int
+  quantity  Int
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id          Int         @id @default(autoincrement())
+  userId      Int
+  totalAmount Decimal     @db.Decimal(10, 2)
+  status      String
+  address     Json
+  trackingId  String?
+  createdAt   DateTime    @default(now())
+  user        User        @relation(fields: [userId], references: [id])
+  items       OrderItem[]
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  quantity  Int
+  price     Decimal @db.Decimal(10, 2)
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Banner {
+  id             Int      @id @default(autoincrement())
+  title          String?
+  imageUrl       String
+  mobileImageUrl String?
+  bannerPosition String
+  isSlider       Boolean  @default(false)
+  displayOrder   Int
+  isActive       Boolean  @default(true)
+  link           String?
+  createdAt      DateTime @default(now())
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+  SUPER_ADMIN
+}

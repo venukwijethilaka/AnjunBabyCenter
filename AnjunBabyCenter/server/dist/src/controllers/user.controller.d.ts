@@ -1,0 +1,20 @@
+import type { Request, Response } from "express";
+export declare const register: (req: Request, res: Response) => Promise<void>;
+export declare const resendOtp: (req: Request, res: Response) => Promise<void>;
+export declare const login: (req: Request, res: Response) => Promise<Response<any, Record<string, any>> | undefined>;
+export declare const verifyOtp: (req: Request, res: Response) => Promise<void>;
+export declare const forgotPassword: (req: Request, res: Response) => Promise<void>;
+export declare const resetPassword: (req: Request, res: Response) => Promise<void>;
+export declare const loginWithGoogle: (req: Request, res: Response) => Promise<Response<any, Record<string, any>> | undefined>;
+export declare const refreshToken: (req: Request, res: Response) => Promise<void>;
+export declare const getProfile: (req: Request, res: Response) => Promise<Response<any, Record<string, any>> | undefined>;
+export declare const updateProfile: (req: Request, res: Response) => Promise<void>;
+export declare const changePassword: (req: Request, res: Response) => Promise<void>;
+export declare const getUsers: (req: Request, res: Response) => Promise<void>;
+export declare const toggleUserStatus: (req: Request, res: Response) => Promise<Response<any, Record<string, any>> | undefined>;
+export declare const updateUserRole: (req: Request, res: Response) => Promise<Response<any, Record<string, any>> | undefined>;
+export declare const getLoyaltyLevels: (req: Request, res: Response) => Promise<void>;
+export declare const createLoyaltyLevel: (req: Request, res: Response) => Promise<void>;
+export declare const updateLoyaltyLevel: (req: Request, res: Response) => Promise<void>;
+export declare const deleteLoyaltyLevel: (req: Request, res: Response) => Promise<void>;
+//# sourceMappingURL=user.controller.d.ts.map

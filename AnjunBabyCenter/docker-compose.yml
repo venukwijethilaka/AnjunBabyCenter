@@ -1,0 +1,49 @@
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: anjun_baby_server
+    env_file:
+      - ./server/.env
+    ports:
+      - "0.0.0.0:8000:8000"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - anjun_network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/products" ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_GOOGLE_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+        - NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY=${NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY}
+        - NEXT_PUBLIC_IMAGEKIT_URL=${NEXT_PUBLIC_IMAGEKIT_URL}
+        - NEXT_PUBLIC_API_URL=http://localhost:8000
+    container_name: anjun_baby_client
+    env_file:
+      - ./client/.env.local
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    ports:
+      - "3000:3000"
+    networks:
+      - anjun_network
+    restart: unless-stopped
+    depends_on:
+      server:
+        condition: service_healthy
+
+networks:
+  anjun_network:
+    driver: bridge
